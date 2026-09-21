@@ -41,6 +41,7 @@
     const response=await fetch(source.url,{method:'GET',cache:'no-store',credentials:'omit',signal:controller.signal,headers:{Accept:'text/html,*/*'}});
     clearTimeout(timer);if(!response.ok)throw new Error('HTTP '+response.status);
     let html=await response.text();if(!html||html.length<100)throw new Error('Resposta vazia/incompleta');
+    html=html.replaceAll('https://www.linemonitorweb.com.br/relatorio-diario.html','https://jeanmichaelsantana-ux.github.io/line-monitor-web-test/relatorio-diario.html');
     const graphFix='<style id="lm-web-graph-width-fix">#graficosResumoModal.graph-modal.show{width:100%!important;max-width:none!important;left:0!important;right:0!important;padding:0!important}#graficosResumoModal .graph-window{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}#graficosResumoModal .head,#graficosResumoModal .graph-top-nav{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}#graficosResumoModal .graph-page-head,#graficosResumoModal .graph-mode-switch,#graficosResumoModal .graph-body{width:calc(100% - 32px)!important;max-width:760px!important;min-width:0!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}#graficosResumoModal canvas{max-width:100%!important}</style>';
     html=html.replace(/<\/head>/i,graphFix+'</head>');
     html=html.replace(/<img([^>]*class=["'][^"']*brand-logo[^"']*["'][^>]*)>/gi,(m,a)=>{
