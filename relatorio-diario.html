@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Line Monitor - Relatório Diário</title>
+<style>html,body{margin:0;min-height:100%;background:#f2f7fb;font-family:Arial,sans-serif}.load{min-height:100vh;display:grid;place-items:center;text-align:center;color:#0b2545;padding:24px}.err{color:#9d2820}</style></head>
+<body><div id="s" class="load">Carregando Relatório Diário 3.7...</div>
+<script>
+(async()=>{const s=document.getElementById('s');try{
+ const u='https://evfjvnkaamkhsxzvkpex.supabase.co/functions/v1/line-monitor-web-current/relatorio_diario_padrao.html?t='+Date.now();
+ const r=await fetch(u,{cache:'no-store',credentials:'omit',headers:{Accept:'text/html,*/*'}});
+ if(!r.ok)throw new Error('HTTP '+r.status);
+ const h=await r.text();if(!/<html[\s>]/i.test(h))throw new Error('Relatório inválido');
+ document.open();document.write(h);document.close();
+}catch(e){s.className='load err';s.textContent='Não foi possível carregar o Relatório Diário: '+e.message}})();
+</script></body></html>
