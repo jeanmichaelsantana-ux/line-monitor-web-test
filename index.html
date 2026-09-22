@@ -1,60 +1,40 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Line Monitor">
-  <meta name="theme-color" content="#0b2545">
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>Line Monitor Web</title>
-  <style>
-    html,body{margin:0;min-height:100%;background:#f2f7fb;font-family:Arial,sans-serif}
-    .load{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;color:#0b2545}
-    .box{max-width:680px}.title{font-size:22px;font-weight:700;margin-bottom:10px}
-    .msg{font-size:14px;line-height:1.5}.err{color:#9d2820}
-    .small{margin-top:12px;font-size:12px;color:#52677d;word-break:break-word}
-  </style>
-</head>
-<body>
-  <div id="status" class="load"><div class="box"><div class="title">Line Monitor Web</div><div id="msg" class="msg">Conectando...</div><div id="detail" class="small"></div></div></div>
-
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-store"><title>Line Monitor Web Test</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f7fb;font-family:Arial,sans-serif;color:#0b2545}
+header{background:#fff;border-bottom:1px solid #dbe5ee;padding:18px 20px;text-align:center;font-size:24px;font-weight:800}
+main{max-width:720px;margin:36px auto;padding:0 18px}.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(11,37,69,.10)}
+h2{margin:0 0 12px}.ok{color:#167247}.bad{color:#b42318}.wait{color:#52677d}
+.row{padding:14px 0;border-top:1px solid #e5edf4}.row:first-of-type{border-top:0}
+strong{display:block;margin-bottom:6px}.small{font-size:13px;color:#52677d;word-break:break-word;line-height:1.45}
+button{margin-top:16px;border:0;border-radius:10px;background:#0b5cab;color:#fff;padding:12px 18px;font-weight:700;font-size:15px}
+</style></head><body>
+<header>Line Monitor Web Test</header>
+<main><div class="card">
+<h2>Teste de acesso no PC da empresa</h2>
+<p>Esta página está carregada diretamente pelo GitHub Pages, sem buscar a interface no Vercel ou na Edge Function.</p>
+<div class="row"><strong>1. Interface GitHub</strong><span class="ok">OK — carregada diretamente.</span></div>
+<div class="row"><strong>2. Banco Supabase</strong><span id="db" class="wait">Testando conexão direta...</span><div id="detail" class="small"></div></div>
+<button onclick="location.reload()">Testar novamente</button>
+</div></main>
 <script>
-(async () => {
-  const msg=document.getElementById('msg'),detail=document.getElementById('detail');
-  const sources=[
-    {name:'Supabase',url:'https://evfjvnkaamkhsxzvkpex.supabase.co/functions/v1/line-monitor-web-current?t='+Date.now(),base:'https://evfjvnkaamkhsxzvkpex.supabase.co/functions/v1/'},
-    {name:'Web',url:'https://line-monitor-ios.vercel.app/?t='+Date.now(),base:'https://line-monitor-ios.vercel.app/'}
-  ];
-  function inject(html,baseUrl){
-    if(!/<html[\s>]/i.test(html))throw new Error('Resposta não é uma página HTML válida');
-    if(/<head[\s>]/i.test(html)&&!/<base[\s>]/i.test(html))html=html.replace(/<head([^>]*)>/i,'<head$1><base href="'+baseUrl+'">');
-    document.open();document.write(html);document.close();
-  }
-  const errors=[];
-  for(const source of sources){try{
-    msg.textContent='Conectando...';
-    const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
-    const response=await fetch(source.url,{method:'GET',cache:'no-store',credentials:'omit',signal:controller.signal,headers:{Accept:'text/html,*/*'}});
-    clearTimeout(timer);if(!response.ok)throw new Error('HTTP '+response.status);
-    let html=await response.text();if(!html||html.length<100)throw new Error('Resposta vazia/incompleta');
-    html=html.replaceAll('https://www.linemonitorweb.com.br/relatorio-diario.html','https://jeanmichaelsantana-ux.github.io/line-monitor-web-test/relatorio-diario.html');
-    const graphFix='<style id="lm-web-graph-width-fix">#graficosResumoModal.graph-modal.show{width:100%!important;max-width:none!important;left:0!important;right:0!important;padding:0!important}#graficosResumoModal .graph-window{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}#graficosResumoModal .head,#graficosResumoModal .graph-top-nav{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}#graficosResumoModal .graph-page-head,#graficosResumoModal .graph-mode-switch,#graficosResumoModal .graph-body{width:calc(100% - 32px)!important;max-width:760px!important;min-width:0!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}#graficosResumoModal canvas{max-width:100%!important}</style>';
-    html=html.replace(/<\/head>/i,graphFix+'</head>');
-    html=html.replace(/<img([^>]*class=["'][^"']*brand-logo[^"']*["'][^>]*)>/gi,(m,a)=>{
-      if(/src=["'][^"']*line_monitor_logo\.png["']/i.test(a)){
-        return '<img'+a.replace(/src=["'][^"']*line_monitor_logo\.png["']/i,'src="'+source.base+'line_monitor_logo.png"')+'>';
-      }
-      return m;
-    });
-    html=html.replace(/src=["'][^"']*line_monitor_logo\.png["']/gi,'src="data:image/jpeg;base64,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"');
-    inject(html,source.base);return;
-  }catch(e){errors.push(source.name+': '+(e&&e.message?e.message:String(e)));}}
-  document.getElementById('status').classList.add('err');
-  msg.textContent='Não foi possível conectar o Line Monitor neste PC.';
-  detail.innerHTML='Diagnóstico: '+errors.join(' | ');
+(async()=>{
+ const el=document.getElementById('db'),d=document.getElementById('detail');
+ const url='https://evfjvnkaamkhsxzvkpex.supabase.co/rest/v1/ocorrencias?select=id&limit=1';
+ const key='sb_publishable_Fm0uArq_A5A2SiExIIP0rA_jmpi_WJS';
+ try{
+  const c=new AbortController();const t=setTimeout(()=>c.abort(),10000);
+  const r=await fetch(url,{cache:'no-store',signal:c.signal,headers:{apikey:key,Accept:'application/json'}});
+  clearTimeout(t);
+  if(!r.ok)throw new Error('HTTP '+r.status+' — '+(await r.text()).slice(0,180));
+  await r.json();
+  el.className='ok';el.textContent='OK — Supabase acessível neste PC.';
+  d.textContent='A rede permitiu acesso direto à API do banco. O próximo passo é publicar a interface completa diretamente no GitHub.';
+ }catch(e){
+  el.className='bad';el.textContent='BLOQUEADO — não foi possível acessar o Supabase.';
+  d.textContent='Diagnóstico: '+(e&&e.message?e.message:String(e))+'. Se aparecer Failed to fetch, a rede corporativa está bloqueando a conexão com o domínio do Supabase.';
+ }
 })();
 </script></body></html>
