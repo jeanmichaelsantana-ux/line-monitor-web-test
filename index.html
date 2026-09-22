@@ -1,40 +1,20 @@
-<!doctype html>
-<html lang="pt-BR"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Cache-Control" content="no-store"><title>Line Monitor Web Test</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#f2f7fb;font-family:Arial,sans-serif;color:#0b2545}
-header{background:#fff;border-bottom:1px solid #dbe5ee;padding:18px 20px;text-align:center;font-size:24px;font-weight:800}
-main{max-width:720px;margin:36px auto;padding:0 18px}.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(11,37,69,.10)}
-h2{margin:0 0 12px}.ok{color:#167247}.bad{color:#b42318}.wait{color:#52677d}
-.row{padding:14px 0;border-top:1px solid #e5edf4}.row:first-of-type{border-top:0}
-strong{display:block;margin-bottom:6px}.small{font-size:13px;color:#52677d;word-break:break-word;line-height:1.45}
-button{margin-top:16px;border:0;border-radius:10px;background:#0b5cab;color:#fff;padding:12px 18px;font-weight:700;font-size:15px}
-</style></head><body>
-<header>Line Monitor Web Test</header>
-<main><div class="card">
-<h2>Teste de acesso no PC da empresa</h2>
-<p>Esta página está carregada diretamente pelo GitHub Pages, sem buscar a interface no Vercel ou na Edge Function.</p>
-<div class="row"><strong>1. Interface GitHub</strong><span class="ok">OK — carregada diretamente.</span></div>
-<div class="row"><strong>2. Banco Supabase</strong><span id="db" class="wait">Testando conexão direta...</span><div id="detail" class="small"></div></div>
-<button onclick="location.reload()">Testar novamente</button>
-</div></main>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Cache-Control" content="no-store"><title>Line Monitor Web Test</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f2f7fb;font-family:Arial,sans-serif;color:#0b2545}header{background:#fff;border-bottom:1px solid #dbe5ee;padding:18px;text-align:center;font-size:24px;font-weight:800}main{max-width:760px;margin:30px auto;padding:0 18px}.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(11,37,69,.1)}h2{margin:0 0 10px}.ok{color:#167247}.bad{color:#b42318}.wait{color:#52677d}.row{padding:15px 0;border-top:1px solid #e5edf4}.row:first-of-type{border-top:0}strong{display:block;margin-bottom:6px}.small{font-size:13px;color:#52677d;word-break:break-word;line-height:1.45}button{margin-top:15px;border:0;border-radius:10px;background:#0b5cab;color:#fff;padding:12px 18px;font-weight:700}</style></head><body>
+<header>Line Monitor Web Test</header><main><div class="card"><h2>Diagnóstico da rede corporativa</h2><p>Versão Test isolada. A versão oficial não foi alterada.</p>
+<div class="row"><strong>1. GitHub Pages</strong><span class="ok">OK — interface carregada.</span></div>
+<div class="row"><strong>2. Supabase direto</strong><span id="sb" class="wait">Testando...</span><div id="sbd" class="small"></div></div>
+<div class="row"><strong>3. GitHub API</strong><span id="gh" class="wait">Testando...</span><div id="ghd" class="small"></div></div>
+<div class="row"><strong>Resultado</strong><span id="result" class="wait">Aguardando os testes...</span><div id="rd" class="small"></div></div>
+<button onclick="location.href=location.pathname+'?v='+Date.now()">Testar novamente</button></div></main>
 <script>
+const timeout=8000; async function test(url,opt={}){const c=new AbortController(),t=setTimeout(()=>c.abort(),timeout);try{const r=await fetch(url,{...opt,cache:'no-store',signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return {ok:true}}catch(e){clearTimeout(t);return {ok:false,error:e?.message||String(e)}}}
 (async()=>{
- const el=document.getElementById('db'),d=document.getElementById('detail');
- const url='https://evfjvnkaamkhsxzvkpex.supabase.co/rest/v1/ocorrencias?select=id&limit=1';
- const key='sb_publishable_Fm0uArq_A5A2SiExIIP0rA_jmpi_WJS';
- try{
-  const c=new AbortController();const t=setTimeout(()=>c.abort(),10000);
-  const r=await fetch(url,{cache:'no-store',signal:c.signal,headers:{apikey:key,Accept:'application/json'}});
-  clearTimeout(t);
-  if(!r.ok)throw new Error('HTTP '+r.status+' — '+(await r.text()).slice(0,180));
-  await r.json();
-  el.className='ok';el.textContent='OK — Supabase acessível neste PC.';
-  d.textContent='A rede permitiu acesso direto à API do banco. O próximo passo é publicar a interface completa diretamente no GitHub.';
- }catch(e){
-  el.className='bad';el.textContent='BLOQUEADO — não foi possível acessar o Supabase.';
-  d.textContent='Diagnóstico: '+(e&&e.message?e.message:String(e))+'. Se aparecer Failed to fetch, a rede corporativa está bloqueando a conexão com o domínio do Supabase.';
- }
-})();
-</script></body></html>
+const sb=await test('https://evfjvnkaamkhsxzvkpex.supabase.co/rest/v1/ocorrencias?select=id&limit=1',{headers:{apikey:'sb_publishable_Fm0uArq_A5A2SiExIIP0rA_jmpi_WJS',Accept:'application/json'}});
+document.getElementById('sb').className=sb.ok?'ok':'bad';document.getElementById('sb').textContent=sb.ok?'OK — conexão permitida.':'BLOQUEADO — conexão não permitida.';document.getElementById('sbd').textContent=sb.ok?'API Supabase respondeu normalmente.':'Diagnóstico: '+sb.error;
+const gh=await test('https://api.github.com/repos/jeanmichaelsantana-ux/line-monitor-web-test',{headers:{Accept:'application/vnd.github+json'}});
+document.getElementById('gh').className=gh.ok?'ok':'bad';document.getElementById('gh').textContent=gh.ok?'OK — GitHub API acessível.':'BLOQUEADO — GitHub API não acessível.';document.getElementById('ghd').textContent=gh.ok?'A rede permite comunicação com api.github.com.':'Diagnóstico: '+gh.error;
+const res=document.getElementById('result'),rd=document.getElementById('rd');
+if(!sb.ok&&gh.ok){res.className='ok';res.textContent='Caminho de teste identificado.';rd.textContent='GitHub e GitHub API estão acessíveis, enquanto Supabase está bloqueado. Para uso real, será necessário um backend/API autorizado pela empresa; esta página não tenta contornar o bloqueio.'}
+else if(sb.ok){res.className='ok';res.textContent='Supabase disponível.';rd.textContent='O PC consegue comunicar diretamente com o banco.'}
+else{res.className='bad';res.textContent='Acesso externo limitado.';rd.textContent='Supabase e GitHub API não responderam nesta rede.'}
+})();</script></body></html>
