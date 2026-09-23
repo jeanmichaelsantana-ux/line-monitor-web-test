@@ -740,11 +740,10 @@ async function gerarRelatorioDiarioPadrao(id){
   if(!x){alert('Ocorrência não encontrada.');return}
   try{
     localStorage.setItem('line_monitor_ocorrencia_relatorio_diario',JSON.stringify(x));
-    if(window.Android){
-      window.location.href='file:///android_asset/relatorio_diario_padrao.html';
-    }else{
-      window.location.href='relatorio_diario_padrao.html';
-    }
+    // WEB TEST: abrir sempre a página publicada no mesmo domínio.
+    // Não usar file:///android_asset aqui, pois no navegador corporativo/web
+    // a presença de uma bridge Android pode desviar para um arquivo local inexistente.
+    window.location.assign('./relatorio_diario_padrao.html');
   }catch(e){
     alert('Não foi possível preparar o Relatório Diário. Tente novamente.');
   }
