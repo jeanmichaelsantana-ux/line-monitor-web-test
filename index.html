@@ -83,7 +83,7 @@ window.fetch=function(input,init){
     const raw=typeof input==='string'?input:(input&&input.url)||'';
     if(raw.indexOf(LM_SUPABASE_ORIGIN+'/rest/v1/')===0){
       const target=raw.slice(LM_SUPABASE_ORIGIN.length);
-      return LM_NATIVE_FETCH('/api/supabase?path='+encodeURIComponent(target),init);
+      return LM_NATIVE_FETCH('/api/supabase'+target,init);
     }
   }catch(e){}
   return LM_NATIVE_FETCH(input,init);
