@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relatório Diário - Line Monitor</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#edf3f8;color:#17283a;font-family:Arial,sans-serif}
+.tools{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;padding:10px;background:#0b2545}
+.tools button{border:0;border-radius:8px;padding:11px 4px;background:#fff;color:#123b59;font-weight:800}
+.sheet{max-width:900px;margin:18px auto;background:#fff;border:1px solid #cfdeea;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px #0b254522}
+.head{display:flex;justify-content:space-between;gap:18px;padding:24px;background:linear-gradient(135deg,#0b2545,#1e5f8c);color:#fff}
+.head h1{margin:0 0 7px;font-size:25px}.head p{margin:0;color:#d6e9f7}.meta{text-align:right;line-height:1.6}
+.body{padding:20px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.box{border:1px solid #d6e4f0;border-radius:9px;padding:12px;background:#f8fbfd}.box label{display:block;font-size:10px;text-transform:uppercase;color:#60758a;font-weight:800;margin-bottom:5px}.box b{color:#0b2545}
+.section{border-top:1px solid #d6e4f0;padding-top:15px;margin-top:15px}.section h2{font-size:16px;color:#0b2545;margin:0 0 8px}.section p{white-space:pre-wrap;line-height:1.55;margin:0}
+.media-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.media{border:1px solid #d6e4f0;border-radius:9px;padding:8px}.media img,.media video{width:100%;max-height:330px;object-fit:contain;background:#eef4f8;border-radius:7px}
+.footer{padding:16px 20px;color:#60758a;font-size:11px;text-align:center}
+.badge{display:inline-block;border-radius:999px;padding:5px 9px;background:#e7f4fc;color:#1e5f8c;font-weight:800;font-size:11px}
+@media(max-width:600px){.sheet{margin:0;border-radius:0}.head{display:block}.meta{text-align:left;margin-top:12px}.summary{grid-template-columns:1fr 1fr}.media-grid{grid-template-columns:1fr}.tools{grid-template-columns:repeat(4,1fr)}}
+@media print{body{background:#fff}.tools{display:none}.sheet{margin:0;max-width:none;border:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="tools">
+<button onclick="setLang('pt')">PT</button>
+<button onclick="setLang('en')">EN</button>
+<button onclick="setLang('ko')">KR</button>
+<button onclick="window.print()">Imprimir</button>
+</div>
+<div id="app"></div>
+<script>
+const dict={
+pt:{title:'Relatório Diário',line:'Linha',equip:'Equipamento',type:'Tipo',status:'Status',date:'Data',time:'Horário',duration:'Tempo',occ:'Ocorrência',cause:'Causa',action:'Ação',resp:'Responsável',evidence:'Evidências',empty:'Nenhuma evidência anexada.',back:'Voltar ao Line Monitor'},
+en:{title:'Daily Report',line:'Line',equip:'Equipment',type:'Type',status:'Status',date:'Date',time:'Time',duration:'Duration',occ:'Occurrence',cause:'Cause',action:'Action',resp:'Responsible',evidence:'Evidence',empty:'No evidence attached.',back:'Back to Line Monitor'},
+ko:{title:'일일 보고서',line:'라인',equip:'설비',type:'유형',status:'상태',date:'날짜',time:'시간',duration:'시간',occ:'발생 내용',cause:'원인',action:'조치',resp:'담당자',evidence:'증빙',empty:'첨부된 증빙이 없습니다.',back:'Line Monitor로 돌아가기'}
+};
+let lang='pt';
+let x=null;
+try{x=JSON.parse(localStorage.getItem('line_monitor_ocorrencia_relatorio_diario')||'null')}catch(e){}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dt(v){if(!v)return null;let d=new Date(v);return isNaN(d)?null:d}
+function duration(){
+  if(x&&x.dur!=null){
+    let n=Number(x.dur)||0, h=Math.floor(n/3600), m=Math.floor((n%3600)/60), s=Math.floor(n%60);
+    return h?`${h}h ${m}min ${s}s`:m?`${m}min ${s}s`:`${s}s`;
+  }
+  let a=dt(x&&x.inicio),b=dt(x&&x.fim);if(!a||!b)return '-';
+  let n=Math.max(0,Math.floor((b-a)/1000)),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;
+  return h?`${h}h ${m}min ${s}s`:m?`${m}min ${s}s`:`${s}s`;
+}
+function evidenceHtml(){
+  let arr=Array.isArray(x&&x.evidencias)?x.evidencias:[];
+  if(!arr.length)return `<p>${dict[lang].empty}</p>`;
+  return `<div class="media-grid">`+arr.map((e,i)=>{
+    let u=e.url||e.data||e.src||'', typ=String(e.tipo||e.type||'').toLowerCase();
+    if(!u)return '';
+    return `<div class="media">${typ.includes('video')?`<video controls src="${esc(u)}"></video>`:`<img src="${esc(u)}" alt="Evidência ${i+1}">`}</div>`;
+  }).join('')+`</div>`;
+}
+function render(){
+  const t=dict[lang], app=document.getElementById('app');
+  if(!x){app.innerHTML=`<div class="sheet"><div class="body"><h2>Relatório não encontrado</h2><p>Volte ao Line Monitor e gere o relatório novamente.</p></div></div>`;return}
+  let ini=dt(x.inicio), fim=dt(x.fim);
+  let data=ini?ini.toLocaleDateString(lang==='pt'?'pt-BR':lang==='ko'?'ko-KR':'en-US'):'-';
+  let horario=(ini?ini.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'-')+(fim?' - '+fim.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'');
+  app.innerHTML=`<div class="sheet">
+    <div class="head"><div><h1>${t.title}</h1><p>Line Monitor</p></div><div class="meta"><b>${esc(x.linha||'-')}</b><br>${esc(data)}</div></div>
+    <div class="body">
+      <div class="summary">
+        <div class="box"><label>${t.line}</label><b>${esc(x.linha||'-')}</b></div>
+        <div class="box"><label>${t.equip}</label><b>${esc(x.equip||x.equipamento||'-')}</b></div>
+        <div class="box"><label>${t.type}</label><b>${esc(x.tipo||'-')}</b></div>
+        <div class="box"><label>${t.status}</label><span class="badge">${esc(x.status||'-')}</span></div>
+        <div class="box"><label>${t.time}</label><b>${esc(horario)}</b></div>
+        <div class="box"><label>${t.duration}</label><b>${esc(duration())}</b></div>
+      </div>
+      <div class="section"><h2>${t.occ}</h2><p>${esc(x.ocorr||x.falha||x.descricao||'-')}</p></div>
+      <div class="section"><h2>${t.cause}</h2><p>${esc(x.causa||'-')}</p></div>
+      <div class="section"><h2>${t.action}</h2><p>${esc(x.acao||x.acao_realizada||'-')}</p></div>
+      <div class="section"><h2>${t.resp}</h2><p>${esc(x.resp||x.responsavel||'-')}</p></div>
+      <div class="section"><h2>${t.evidence}</h2>${evidenceHtml()}</div>
+    </div>
+    <div class="footer">Line Monitor</div>
+  </div>`;
+}
+function setLang(v){lang=v;render()}
+render();
+</script>
+</body></html>
