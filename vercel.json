@@ -8,12 +8,20 @@
     {
       "src": "index.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "relatorio_diario_padrao.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/supabase(?:/(.*))?",
       "dest": "/supabase-proxy.js"
+    },
+    {
+      "src": "/relatorio_diario_padrao\\.html",
+      "dest": "/relatorio_diario_padrao.html"
     },
     {
       "src": "/(.*)",

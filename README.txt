@@ -1,10 +1,14 @@
-LINE MONITOR WEB TEST - ENVIO PELO CELULAR
+LINE MONITOR WEB TEST - PACOTE FINAL
 
-Selecione os 4 arquivos juntos no Vercel:
+Arquivos:
 1. index.html
 2. supabase-proxy.js
 3. vercel.json
-4. README.txt
+4. relatorio_diario_padrao.html
 
-A função backend foi colocada na raiz para evitar a necessidade de selecionar a pasta api no Android.
-Antes do teste funcional, configure no projeto Vercel as variáveis SUPABASE_URL e SUPABASE_ANON_KEY.
+Objetivo:
+- Preservar o acesso da Web Test pela rede corporativa usando o proxy do Supabase.
+- Liberar a página dedicada do Relatório Diário.
+- Manter o fallback do aplicativo para index.html.
+
+Não remover as variáveis SUPABASE_URL e SUPABASE_ANON_KEY do projeto Vercel.
