@@ -620,9 +620,23 @@ Resolução da pendência:
       mostrarToast('toast_msg', 'Relatório salvo com as alterações');
     }
 
+    function prepararHtmlStandalone(html){
+      try{
+        var doc=new DOMParser().parseFromString(html,'text/html');
+        var scripts=doc.querySelectorAll('script');
+        scripts.forEach(function(s){
+          if((s.textContent||'').indexOf('line_monitor_ocorrencia_relatorio_diario')!==-1){s.remove();}
+        });
+        var aviso=doc.createElement('script');
+        aviso.textContent="window.addEventListener('DOMContentLoaded',function(){var n=document.querySelector('.local-note');if(n)n.textContent='🔒 Relatório HTML independente';});";
+        doc.body.appendChild(aviso);
+        return '<!DOCTYPE html>\\n'+doc.documentElement.outerHTML;
+      }catch(e){return html;}
+    }
+
     async function salvarAlteracoes() {
       let html;
-      try { html = await criarCopiaCompartilhavel(); }
+      try { html = prepararHtmlStandalone(await criarCopiaCompartilhavel()); }
       catch (e) { mostrarToast('', 'Não foi possível preparar as fotos. Verifique a internet.'); return; }
       const blob = new Blob([html], {type: 'text/html'});
       const nomeArquivo = 'relatorio_ocorrencias_editado.html';
@@ -933,7 +947,7 @@ Resolução da pendência:
           delete el.dataset.cacheEn;
           delete el.dataset.cacheKo;
         });
-        recalcularResumo();localStorage.removeItem('line_monitor_ocorrencia_relatorio_diario');
+        recalcularResumo();
       }catch(e){alert('Não foi possível preencher os dados da ocorrência. Volte e tente novamente.')}
     }
     preencherDoLineMonitor();
