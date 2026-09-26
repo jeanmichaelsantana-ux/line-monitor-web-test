@@ -1,31 +1,25 @@
 (function(){
-  function absEvidence(value){
-    var u=String(value||'').trim();
-    if(!u)return '';
-    if(/^(data:|blob:)/i.test(u))return u;
-    try{return new URL(typeof urlEvidenciaWeb==='function'?urlEvidenciaWeb(u):u,window.location.origin).href}catch(e){return u}
-  }
-  function people(value){return String(value||'').split(',').map(function(v){return v.trim()}).filter(Boolean)}
-  function safe(value){return typeof esc==='function'?esc(value):String(value||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
-  window.gerarRelatorioDiario=function(id){
-    var x=dados.find(function(o){return String(o.id)===String(id)});
-    if(!x){alert('Ocorrência não encontrada.');return}
-    var ini=new Date(x.inicio),fim=x.fim?new Date(x.fim):null;
-    var data=ini.toLocaleDateString('pt-BR');
-    var horario=ini.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+(fim?' até '+fim.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'');
-    var responsaveis=people(x.resp),plural=responsaveis.length>1;
-    var fotos=[],videos=[];
-    (Array.isArray(x.evidencias)?x.evidencias:[]).forEach(function(ev){
-      var url=absEvidence(ev&&(ev.url||ev.data||ev.src));
-      if(!url)return;
-      (String(ev&&(ev.tipo||ev.type)||'').toLowerCase().indexOf('video')>=0?videos:fotos).push(url);
+  window.gerarRelatorioDiario = function(id){
+    var ocorrencia = dados.find(function(item){
+      return String(item.id) === String(id);
     });
-    var midiasFoto=fotos.map(function(u,i){return '<figure><img src="'+safe(u)+'" alt="Evidência '+(i+1)+'"><figcaption data-pt="EVIDÊNCIA '+(i+1)+'" data-en="EVIDENCE '+(i+1)+'" data-ko="증거 '+(i+1)+'">EVIDÊNCIA '+(i+1)+'</figcaption></figure>'}).join('');
-    var midiasVideo=videos.map(function(u,i){return '<figure><video controls src="'+safe(u)+'"></video><figcaption>VÍDEO '+(i+1)+'</figcaption></figure>'}).join('');
-    var tipo=String(x.tipo||'-'),concluida=String(x.status||'').toLowerCase().indexOf('conclu')>=0;
-    var html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório de Ocorrências Diárias</title><style>'+
-    '*{box-sizing:border-box}body{margin:0;background:#eef4f8;color:#1c3042;font:14px Arial,sans-serif}.wrap{max-width:1050px;margin:auto;padding:18px}.tools{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:14px}.note{padding:9px 12px;background:#eaf7ee;border:1px solid #c7e4cf;border-radius:5px;color:#247044;font-size:12px}.buttons{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.buttons button,.langs button{border:0;border-radius:5px;padding:9px 13px;background:#174e76;color:#fff;font-weight:800}.sheet{background:#fff;border-radius:7px;overflow:hidden;box-shadow:0 8px 25px #1232}.hero{padding:23px 34px;background:linear-gradient(135deg,#0b294e,#154b75);color:#fff}.langs{display:flex;gap:7px;margin-bottom:13px}.langs button{background:#fff;color:#173a58;border-radius:999px;padding:5px 10px}.head{display:flex;justify-content:space-between;gap:18px}.head h1{font-size:23px;margin:0 0 7px}.head p,.head-meta{margin:0;color:#d5e4ee}.head-meta{text-align:right;line-height:1.7}.stats{display:grid;grid-template-columns:repeat(3,1fr);background:#17618c;color:#fff}.stats div{text-align:center;padding:13px;border-right:1px solid #ffffff22}.stats b{display:block;font-size:20px}.body{padding:25px 34px}.shift{padding:14px;border-left:4px solid #3097c3;background:#f0f6fa;border-radius:4px;margin-bottom:20px}.occ{border:1px solid #ccdde7;border-radius:5px;overflow:hidden}.occ-head{padding:11px 14px;background:#edf4f8;border-top:3px solid #3294be;display:flex;justify-content:space-between;gap:10px}.tag{display:inline-block;padding:5px 9px;margin-right:6px;background:#3f9ec5;color:#fff;font-size:11px;font-weight:800}.tag.ok{background:#dff1df;color:#2b763c}.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:15px}.fields label,.media-title{display:block;color:#627687;font-size:10px;font-weight:800;text-transform:uppercase;margin-bottom:5px}.fields b{display:block}.desc{margin:0 15px 16px;padding:12px;border-left:3px solid #3198c4;background:#f7fafc;line-height:1.55}.media-title{margin:18px 15px 8px}.media{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 15px 18px}.media figure{margin:0;text-align:center}.media img,.media video{width:100%;aspect-ratio:1.45;object-fit:cover;border:1px solid #bdd1df;border-radius:4px}.media figcaption{padding-top:6px;font-size:10px;font-weight:800}.empty{display:flex;align-items:center;justify-content:center;aspect-ratio:1.45;border:1px dashed #2685ad;color:#246789;font-weight:700}.foot{text-align:center;padding:19px;color:#718390;font-size:11px;border-top:1px solid #e0e8ee}@media(max-width:650px){.wrap{padding:8px}.tools{display:block}.note{margin-bottom:8px}.buttons{justify-content:flex-start}.hero,.body{padding:18px}.head{display:block}.head-meta{text-align:left;margin-top:10px}.fields{grid-template-columns:1fr}.media{grid-template-columns:repeat(2,1fr)}.occ-head{display:block}.stats span{font-size:10px}}@media print{.tools{display:none}.wrap{padding:0}.sheet{box-shadow:none}}'+
-    '</style></head><body><main class="wrap"><div class="tools"><div class="note">🔒 <span data-pt="Relatórios salvos somente neste celular · Não enviados ao banco de dados" data-en="Reports saved only on this device · Not sent to the database" data-ko="보고서는 이 기기에만 저장됩니다">Relatórios salvos somente neste celular · Não enviados ao banco de dados</span></div><div class="buttons"><button onclick="share()">📤 Compartilhar</button><button onclick="window.print()">💾 Salvar relatório</button></div></div><article class="sheet"><header class="hero"><div class="langs"><button onclick="lang(\'pt\')">🇧🇷 PT-BR</button><button onclick="lang(\'en\')">🇺🇸 EN</button><button onclick="lang(\'ko\')">🇰🇷 한국어</button></div><div class="head"><div><h1 data-pt="RELATÓRIO DE OCORRÊNCIAS DIÁRIAS" data-en="DAILY OCCURRENCE REPORT" data-ko="일일 발생 보고서">RELATÓRIO DE OCORRÊNCIAS DIÁRIAS</h1><p>VD-Automação</p></div><div class="head-meta"><b>Data:</b> '+safe(data)+'<br><b>Turno:</b> 1º Turno</div></div></header><section class="stats"><div><b>1</b><span>Ocorrências</span></div><div><b>1</b><span>Equipamentos</span></div><div><b>'+Math.max(1,responsaveis.length)+'</b><span>Técnicos envolvidos</span></div></section><div class="body"><div class="shift"><b>Resumo do turno:</b> '+(tipo.toLowerCase().indexOf('corretiva')>=0?'1':'0')+' corretiva(s) · '+(tipo.toLowerCase().indexOf('preventiva')>=0?'1':'0')+' preventiva(s) · '+(tipo.toLowerCase().indexOf('melhoria')>=0?'1':'0')+' melhoria(s) · '+(concluida?'todas concluídas':'com pendência')+'</div><section class="occ"><div class="occ-head"><div><span class="tag">'+safe(tipo)+'</span><span class="tag ok">'+safe(x.status||'-')+'</span><b>'+safe(x.linha)+' - '+safe(x.equip)+'</b></div><span>Ocorrência #01</span></div><div class="fields"><div><label>Equipamento</label><b>'+safe(x.equip)+'</b></div><div><label data-pt="'+(plural?'Técnicos responsáveis':'Técnico responsável')+'" data-en="'+(plural?'Responsible technicians':'Responsible technician')+'" data-ko="담당 기술자">'+(plural?'Técnicos responsáveis':'Técnico responsável')+'</label><b>'+safe(x.resp||'-')+'</b></div><div><label>Horário</label><b>'+safe(horario)+'</b></div></div><div class="desc"><b>Ocorrência:</b> '+safe(x.ocorr||'-')+' <b>Causa identificada:</b> '+safe(x.causa||'-')+' <b>Ação realizada:</b> '+safe(x.acao||'-')+'</div><div class="media-title">Fotos</div><div class="media">'+midiasFoto+(fotos.length?'<div class="empty">+ Adicionar Foto</div>':'<div class="empty">Nenhuma foto</div>')+'</div><div class="media-title">Vídeos</div><div class="media">'+midiasVideo+(videos.length?'':'<div class="empty">+ Adicionar Vídeo</div>')+'</div></section></div><footer class="foot">Relatório gerado automaticamente · Nome da Empresa · VD-Automação</footer></article></main><script>function lang(l){document.querySelectorAll("[data-"+l+"]").forEach(function(e){e.textContent=e.getAttribute("data-"+l)});document.documentElement.lang=l==="ko"?"ko":l==="en"?"en":"pt-BR"}async function share(){var c="<!doctype html>"+document.documentElement.outerHTML;try{var f=new File([c],"Relatorio_Diario_Line_Monitor.html",{type:"text/html"});if(navigator.share){await navigator.share({title:document.title,files:[f]});return}}catch(e){}window.print()}<\/script></body></html>';
-    window.location.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+
+    if(!ocorrencia){
+      alert('Ocorrência não encontrada.');
+      return;
+    }
+
+    try{
+      localStorage.setItem(
+        'line_monitor_ocorrencia_relatorio_diario',
+        JSON.stringify(ocorrencia)
+      );
+      window.location.assign(
+        new URL('./relatorio_diario_padrao.html', window.location.href).href
+      );
+    }catch(error){
+      console.error('Erro ao abrir Relatório Diário:', error);
+      alert('Não foi possível preparar o Relatório Diário. Tente novamente.');
+    }
   };
 })();
