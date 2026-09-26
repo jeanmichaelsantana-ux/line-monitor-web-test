@@ -12,6 +12,10 @@
     {
       "src": "relatorio_diario_padrao.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "report28_override.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -22,6 +26,10 @@
     {
       "src": "/relatorio_diario_padrao\\.html",
       "dest": "/relatorio_diario_padrao.html"
+    },
+    {
+      "src": "/report28_override\\.js",
+      "dest": "/report28_override.js"
     },
     {
       "src": "/(.*)",
