@@ -20,11 +20,12 @@
 .more-grid-three{grid-template-columns:repeat(3,1fr)}@media(max-width:560px){.more-grid-three{grid-template-columns:repeat(3,1fr)}.more-grid-three .more-card{padding:22px 8px}.more-grid-three .more-card span{font-size:15px}}
 <style>
 /* Gráficos no mesmo padrão visual das demais páginas */
-#graficosResumoModal{left:0!important;right:0!important;width:100%!important;max-width:none!important;justify-content:center!important}
-#graficosResumoModal .graph-window{width:100%!important;max-width:760px!important;background:var(--bg);min-height:100vh;margin:0 auto!important}
+#graficosResumoModal{left:0!important;right:0!important;width:100%!important;max-width:none!important;justify-content:stretch!important}
+#graficosResumoModal .graph-window{width:100%!important;max-width:none!important;background:var(--bg);min-height:100vh;margin:0!important}
 #graficosResumoModal .head,#graficosResumoModal .graph-top-nav{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important}
 #graficosResumoModal .head{margin:0}
 #graficosResumoModal .graph-top-nav{position:sticky;top:0;z-index:40}
+#graficosResumoModal .graph-page-head,#graficosResumoModal .graph-mode-switch,#graficosResumoModal .graph-body{width:100%;max-width:760px;margin-left:auto;margin-right:auto}
 #graficosResumoModal .graph-page-head{padding:18px 12px 6px;background:var(--bg)}
 #graficosResumoModal .graph-page-head h2{margin:0;color:var(--n);font-size:clamp(19px,5.6vw,24px)}
 #graficosResumoModal .graph-page-head p{margin:6px 0 0;color:#60758a;font-size:14px}
