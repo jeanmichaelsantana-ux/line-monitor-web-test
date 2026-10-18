@@ -158,7 +158,7 @@
 </head>
 <body>
   <div class="toolbar">
-    <div class="local-note">🔒 Relatórios salvos somente neste celular · Não enviados ao banco de dados</div>
+    <div class="local-note">🔒 Relatórios salvos somente neste PC ou celular · Não enviados ao banco de dados do Line Monitor</div>
     <button class="save-btn" onclick="salvarAlteracoes()">📤 <span>Compartilhar</span></button>
     <button class="save-btn secondary" onclick="salvarRelatorioLocal()">💾 <span>Salvar relatório</span></button>
     <button class="save-btn secondary" onclick="abrirRelatoriosSalvos()">📁 <span>Relatórios</span></button>
@@ -519,7 +519,7 @@
           req.onerror = function() { reject(req.error); };
         });
         banco.close();
-        mostrarToast('', 'Relatório salvo no aparelho');
+        mostrarToast('', 'Relatório salvo somente neste PC ou celular');
       } catch (e) {
         mostrarToast('', 'Não foi possível salvar o relatório');
       }
