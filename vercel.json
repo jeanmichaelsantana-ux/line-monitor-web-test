@@ -16,6 +16,18 @@
     {
       "src": "report28_override.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "relatorio_analise_causas.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "relatorio_preventiva_padrao.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "relatorio_melhoria_padrao.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -30,6 +42,18 @@
     {
       "src": "/report28_override\\.js",
       "dest": "/report28_override.js"
+    },
+    {
+      "src": "/relatorio_analise_causas\\.html",
+      "dest": "/relatorio_analise_causas.html"
+    },
+    {
+      "src": "/relatorio_preventiva_padrao\\.html",
+      "dest": "/relatorio_preventiva_padrao.html"
+    },
+    {
+      "src": "/relatorio_melhoria_padrao\\.html",
+      "dest": "/relatorio_melhoria_padrao.html"
     },
     {
       "src": "/(.*)",
