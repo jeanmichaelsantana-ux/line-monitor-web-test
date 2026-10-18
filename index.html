@@ -252,7 +252,14 @@ function mostrarEvidenciaFinalizacao(id){pausarAtualizacaoArquivoV29();let inp=$
 function selecionarAreaHistorico(area){$('filtro').value=area==='todas'?'':area;$('filtroLinha').value='';$('filtroTodos').classList.toggle('on',area==='todas');$('filtroLCM').classList.toggle('on',area==='LCM');$('filtroMain').classList.toggle('on',area==='Main Line');if(area==='todas'){$('filtroLinhaBox').classList.add('hide');$('filtroLinhas').innerHTML='';render();return}let linhas=area==='LCM'?['VL01','VL02','VL03','VL04','VL05','VL06']:['VM01','VM02','VM03','VM04','VM05','VM06','VM07','VM50'];$('filtroLinhaLabel').textContent=area==='LCM'?'Ver linha do LCM':'Ver linha da Main Line';$('filtroLinhas').innerHTML=linhas.map(x=>`<button type="button" data-linha="${x}" onclick="selecionarLinhaHistorico('${x}')">${x}</button>`).join('');$('filtroLinhaBox').classList.remove('hide');render()}
 function selecionarLinhaHistorico(linha){$('filtroLinha').value=linha;$('filtro').value=linha;document.querySelectorAll('#filtroLinhas button').forEach(b=>b.classList.toggle('on',b.dataset.linha===linha));render()}
 function esc(s){return String(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-async function carregar(){
+let cargaCompletaEmAndamento=null;
+let dadosCompletosCarregados=false;
+function carregar(){
+ if(cargaCompletaEmAndamento)return cargaCompletaEmAndamento;
+ cargaCompletaEmAndamento=carregarCompleto().finally(()=>{cargaCompletaEmAndamento=null});
+ return cargaCompletaEmAndamento;
+}
+async function carregarCompleto(){
   await sincronizarResolucoesPendentes();
   await sincronizarEvidenciasPendentes();
   await sincronizarLocais();
@@ -268,6 +275,7 @@ async function carregar(){
     remotos=remotos.map(x=>{let p=pendEv.find(i=>String(i.id)===String(x.id));return p&&Array.isArray(p.evidencias)?{...x,evidencias:p.evidencias}:x});
     dados=mesclarSemDuplicar(lerLocais(),remotos);
     salvarCacheDados(remotos);
+    dadosCompletosCarregados=true;
     if(!formularioAtivoV29())render();
   }catch(e){dados=mesclarSemDuplicar(lerLocais(),lerCacheDados());if(!formularioAtivoV29())render();}
 }
@@ -779,7 +787,25 @@ function abrirHistoricoLinhaHome(linha){
   },180);
 }
 function hojeChaveNova(){return chaveDia(new Date())}
-function renderHomeNova(){let h=hojeChaveNova(),arr=dados.filter(x=>chaveDia(x.inicio)===h),p=dados.filter(x=>String(x.status||'').toLowerCase().includes('pend')).slice().sort((a,b)=>{let tb=new Date(b.inicio||0).getTime()||0,ta=new Date(a.inicio||0).getTime()||0;return tb-ta});let seg=arr.reduce((a,x)=>a+(contaParada(x.tipo)?Number(x.dur||0):0),0);if($('homeHoje'))$('homeHoje').textContent=arr.length;if($('homePend'))$('homePend').textContent=p.length;if($('homeStop'))$('homeStop').textContent=formataTempo(seg)||'0 seg';let linesLCM=['VL01','VL02','VL03','VL04','VL05','VL06'],linesMain=['VM01','VM02','VM03','VM04','VM05','VM06','VM07','VM50'],lines=[...linesLCM,...linesMain];if($('statusLineButtons')){const mk=(ls)=>ls.map(l=>{let pc=p.filter(x=>x.linha===l).length,c=pc>0?'critical':'';return `<button class="line-status-btn ${c}" onclick="abrirHistoricoLinhaHome('${l}')">${l}<i></i></button>`}).join('');$('statusLineButtons').innerHTML=`<div style="grid-column:1/-1;font-weight:900;color:#123c61;margin:2px 2px 0">LCM</div>${mk(linesLCM)}<div style="grid-column:1/-1;font-weight:900;color:#123c61;margin:10px 2px 0">MAIN LINE</div>${mk(linesMain)}`;}let aLCM=p.find(x=>String(x.linha||'').startsWith('VL')),aMain=p.find(x=>String(x.linha||'').startsWith('VM'));if($('attentionCard')){const card=(a,area)=>a?`<div class="attention-item"><div class="att-top"><b>${a.linha||'Linha'} · ${partesEquipamento(a.equip).nome||a.equip||'Equipamento'}</b><span class="badge">PENDENTE</span></div><p>${a.ocorr||a.falha||'Ocorrência pendente'}</p><small><b style="font-size:10px;color:#2284bd">${area}</b> · Responsável: ${a.resp||'-'}</small></div>`:`<div class="attention-item"><div class="att-top"><b>${area}</b><span class="badge" style="background:#e8f7ef;color:#1d7a4b">SEM PENDÊNCIA</span></div><p>Nenhuma pendência aberta nesta área.</p></div>`;$('attentionCard').innerHTML=card(aLCM,'LCM')+card(aMain,'MAIN LINE');}if($('stopBars')){let vals=lines.map(l=>[l,arr.filter(x=>x.linha===l).reduce((n,x)=>n+(contaParada(x.tipo)?Number(x.dur||0):0),0)]),mx=Math.max(1,...vals.map(v=>v[1]));$('stopBars').innerHTML=vals.map(([l,v])=>`<div class="stop-line"><span>${l}</span><div class="track"><i style="width:${Math.round(v/mx*100)}%"></i></div><strong>${formataTempo(v)||'0s'}</strong></div>`).join('')}}
+function renderHomeNova(lista=dados){let h=hojeChaveNova(),arr=lista.filter(x=>chaveDia(x.inicio)===h),p=lista.filter(x=>String(x.status||'').toLowerCase().includes('pend')).slice().sort((a,b)=>{let tb=new Date(b.inicio||0).getTime()||0,ta=new Date(a.inicio||0).getTime()||0;return tb-ta});let seg=arr.reduce((a,x)=>a+(contaParada(x.tipo)?Number(x.dur||0):0),0);if($('homeHoje'))$('homeHoje').textContent=arr.length;if($('homePend'))$('homePend').textContent=p.length;if($('homeStop'))$('homeStop').textContent=formataTempo(seg)||'0 seg';let linesLCM=['VL01','VL02','VL03','VL04','VL05','VL06'],linesMain=['VM01','VM02','VM03','VM04','VM05','VM06','VM07','VM50'],lines=[...linesLCM,...linesMain];if($('statusLineButtons')){const mk=(ls)=>ls.map(l=>{let pc=p.filter(x=>x.linha===l).length,c=pc>0?'critical':'';return `<button class="line-status-btn ${c}" onclick="abrirHistoricoLinhaHome('${l}')">${l}<i></i></button>`}).join('');$('statusLineButtons').innerHTML=`<div style="grid-column:1/-1;font-weight:900;color:#123c61;margin:2px 2px 0">LCM</div>${mk(linesLCM)}<div style="grid-column:1/-1;font-weight:900;color:#123c61;margin:10px 2px 0">MAIN LINE</div>${mk(linesMain)}`;}let aLCM=p.find(x=>String(x.linha||'').startsWith('VL')),aMain=p.find(x=>String(x.linha||'').startsWith('VM'));if($('attentionCard')){const card=(a,area)=>a?`<div class="attention-item"><div class="att-top"><b>${a.linha||'Linha'} · ${partesEquipamento(a.equip).nome||a.equip||'Equipamento'}</b><span class="badge">PENDENTE</span></div><p>${a.ocorr||a.falha||'Ocorrência pendente'}</p><small><b style="font-size:10px;color:#2284bd">${area}</b> · Responsável: ${a.resp||'-'}</small></div>`:`<div class="attention-item"><div class="att-top"><b>${area}</b><span class="badge" style="background:#e8f7ef;color:#1d7a4b">SEM PENDÊNCIA</span></div><p>Nenhuma pendência aberta nesta área.</p></div>`;$('attentionCard').innerHTML=card(aLCM,'LCM')+card(aMain,'MAIN LINE');}if($('stopBars')){let vals=lines.map(l=>[l,arr.filter(x=>x.linha===l).reduce((n,x)=>n+(contaParada(x.tipo)?Number(x.dur||0):0),0)]),mx=Math.max(1,...vals.map(v=>v[1]));$('stopBars').innerHTML=vals.map(([l,v])=>`<div class="stop-line"><span>${l}</span><div class="track"><i style="width:${Math.round(v/mx*100)}%"></i></div><strong>${formataTempo(v)||'0s'}</strong></div>`).join('')}}
+
+async function carregarResumoInicial(){
+ const campos='id,linha,equipamento,inicio_parada,fim_parada,tipo_falha,status,falha,responsavel,duracao_minutos';
+ try{
+  const r=await fetch(API+'?select='+campos+'&order=created_at.desc',{headers:HEADERS,cache:'no-store'});
+  if(!r.ok)throw new Error('Resumo indisponível');
+  const rows=await r.json();
+  const resumo=rows.filter(x=>x.status!=='Excluída').map(x=>({id:x.id,linha:x.linha,equip:x.equipamento,inicio:x.inicio_parada,tipo:normalizaTipo(x.tipo_falha),status:x.status,ocorr:x.falha,resp:x.responsavel,dur:x.fim_parada?segundos(x.inicio_parada,x.fim_parada):Math.round((Number(x.duracao_minutos)||0)*60)}));
+  if(!dadosCompletosCarregados)renderHomeNova(mesclarSemDuplicar(lerLocais(),resumo));
+ }catch(e){
+  if(!dadosCompletosCarregados){
+   const cache=mesclarSemDuplicar(lerLocais(),lerCacheDados());
+   if(cache.length)renderHomeNova(cache);
+   else if($('attentionCard'))$('attentionCard').textContent='Não foi possível carregar os dados. Verifique a conexão e tente novamente.';
+  }
+ }
+}
+document.addEventListener('DOMContentLoaded',carregarResumoInicial,{once:true});
 function renderPendenciasNova(){let arr=dados.filter(x=>String(x.status||'').toLowerCase().includes('pend')).sort((a,b)=>new Date(a.inicio)-new Date(b.inicio));window.__pendTeste=arr;let el=$('listaPendenciasNova');if(!el)return;if($('countTodasPend'))$('countTodasPend').textContent=arr.length;renderPendenciasTesteLista(arr)}
 function renderPendenciasTesteLista(arr){let el=$('listaPendenciasNova');if(!el)return;let now=Date.now();el.innerHTML=arr.length?arr.map(x=>{let age=Math.max(0,Math.floor((now-new Date(x.inicio).getTime())/86400000)),crit=age>=2?' critical-test':'';return `<div class="pending-item${crit}"><b>⚠ ${x.linha||'Linha'} · ${partesEquipamento(x.equip).nome||x.equip||'Equipamento'}</b><div class="meta">${x.ocorr||x.falha||'Ocorrência pendente'}</div><div class="meta"><strong>Responsável:</strong> ${x.resp||'-'}</div><div class="meta" style="margin-top:5px;color:${age>=2?'#d33':'#e28b00'};font-weight:800">${age?`Há ${age} dia${age>1?'s':''}`:'Recente'}</div><button class="btn" style="margin-top:10px" onclick="abrirHistoricoPendencia('${x.id}')">Resolver</button></div>`}).join(''):'<div class="card"><b>Nenhuma pendência.</b><p class="meta">Não existem atividades pendentes no momento.</p></div>'}
 function filtrarPendenciasTeste(tipo,b){document.querySelectorAll('.filter-chips button').forEach(x=>x.classList.remove('on'));if(b)b.classList.add('on');let a=window.__pendTeste||[],now=Date.now();if(tipo==='criticas')a=a.filter(x=>(now-new Date(x.inicio).getTime())>=172800000);if(tipo==='recentes')a=a.filter(x=>(now-new Date(x.inicio).getTime())<172800000);renderPendenciasTesteLista(a)}
