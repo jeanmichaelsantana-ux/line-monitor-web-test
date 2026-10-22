@@ -1,8 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script id="lm-daily-web-proxy">(()=>{
+ const original=window.fetch.bind(window);
+ window.fetch=function(input,options){
+  if(typeof input==='string'&&/^https:\/\/evfjvnkaamkhsxzvkpex\.supabase\.co\//.test(input))input='/api/supabase'+new URL(input).pathname+new URL(input).search;
+  return original(input,options);
+ };
+})();</script>
 <meta charset="UTF-8">
-<title>Relatório de Ocorrências Diárias — 12/08/2026</title>
+<meta name="line-monitor-report-build" content="2026101809">
+<title>Relatório diário — 12/08/2026</title>
 <style>
   :root{
     /* 🔧 CORES: valores vêm das constantes COR_* lá no topo do arquivo */
@@ -155,10 +163,72 @@
     .occ-type-sel, .occ-status-sel, .turno-sel{-webkit-appearance:none;appearance:none;background-image:none;padding-right:10px;pointer-events:none;}
   }
 </style>
+<script>
+/* Preparação Line Monitor 3.7. Não publica nem altera a versão instalada. */
+(function(root){
+ 'use strict';
+ const MAX_CACHE=64*1024*1024,TTL=7*86400000,flights=new Map();
+ function uuid(){if(root.crypto&&root.crypto.randomUUID)return root.crypto.randomUUID();const a=new Uint8Array(16);root.crypto.getRandomValues(a);a[6]=(a[6]&15)|64;a[8]=(a[8]&63)|128;const h=Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');return [h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-');}
+ function openDB(){return new Promise((ok,no)=>{const r=indexedDB.open('LineMonitorSharedMedia37',1);r.onupgradeneeded=()=>{for(const name of ['pending','media'])if(!r.result.objectStoreNames.contains(name))r.result.createObjectStore(name,{keyPath:'id'});};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});}
+ async function dbop(store,action,value){const db=await openDB();try{return await new Promise((ok,no)=>{const tx=db.transaction(store,['get','getAll'].includes(action)?'readonly':'readwrite');const r=tx.objectStore(store)[action](value);let result;r.onsuccess=()=>{result=r.result;};tx.oncomplete=()=>ok(result);tx.onerror=()=>no(tx.error);tx.onabort=()=>no(tx.error||Error('Armazenamento interrompido'));});}finally{db.close();}}
+ async function timedFetch(url,options={}){const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);try{return await root.fetch(url,{...options,signal:c.signal});}finally{clearTimeout(t);}}
+ async function fetchMedia(url,options={}){
+  if(!/^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/(public|sign)\/evidencias\//.test(String(url)))return timedFetch(url,options);
+  if(!flights.has(url))flights.set(url,(async()=>{
+   let cached;try{cached=await dbop('media','get',url);}catch(_){}
+   if(cached&&Date.now()-cached.savedAt<TTL)return cached;
+   const r=await timedFetch(url,{...options,cache:'default'});if(!r.ok)throw Error('Falha ao baixar evidência: '+r.status);
+   const blob=await r.blob(),item={id:url,blob,savedAt:Date.now(),type:blob.type||r.headers.get('Content-Type')||'application/octet-stream'};
+   if(blob.size<=MAX_CACHE)try{const entries=await dbop('media','getAll');let size=entries.reduce((s,x)=>s+x.blob.size,0);for(const x of entries.sort((a,b)=>a.savedAt-b.savedAt)){if(size+blob.size<=MAX_CACHE)break;await dbop('media','delete',x.id);size-=x.blob.size;}await dbop('media','put',item);}catch(_){}
+   return item;
+  })().finally(()=>flights.delete(url)));
+  const item=await flights.get(url);return new Response(item.blob,{status:200,headers:{'Content-Type':item.type}});
+ }
+
+ function makeQueue(deps){let flight=null;
+  function sync(){if(flight)return flight;flight=(async()=>{
+   if(deps.online&& !deps.online())return;
+   const attempted=new Set();
+   while(true){let records=deps.read(),record=records.find(x=>!x._syncReview&&!attempted.has(x.id));if(!record)break;attempted.add(record.id);
+    if(!record.requestId){record={...record,requestId:uuid()};deps.write(records.map(x=>x.id===record.id?record:x));}
+    try{
+     if(deps.prepare)record=await deps.prepare(record);
+     const snapshot=JSON.stringify(record),payload={...deps.payload(record),id:record.requestId};
+     const r=await deps.fetch(deps.api+'?on_conflict=id',{method:'POST',headers:{...deps.headers,Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify(payload)});
+     if(!r.ok)throw Error('Envio recusado: '+r.status);
+     let rows=await r.json();
+     if(!Array.isArray(rows)||!rows.some(x=>x.id===record.requestId)){
+      const check=await deps.fetch(deps.api+'?id=eq.'+encodeURIComponent(record.requestId)+'&select=id',{headers:deps.headers});if(!check.ok)throw Error('Confirmação indisponível');rows=await check.json();
+      if(!Array.isArray(rows)||!rows.some(x=>x.id===record.requestId))throw Error('Servidor não confirmou a ocorrência');
+     }
+     const current=deps.read().find(x=>x.id===record.id);
+     // Never erase a local edit made while its initial creation was in flight.
+     if(current&&JSON.stringify(current)!==snapshot){deps.write(deps.read().map(x=>x.id===record.id?{...x,_syncReview:true}:x));if(deps.notice)deps.notice('Ocorrência recebida; há edição local pendente de revisão.');continue;}
+     deps.write(deps.read().filter(x=>x.id!==record.id));if(deps.confirmed)await deps.confirmed(record,record.requestId);
+    }catch(e){if(deps.notice)deps.notice('Salva no celular — aguardando envio. '+e.message);break;}
+   }
+  })().finally(()=>{flight=null;});return flight;}
+  return {sync};
+ }
+ root.LM37={uuid,dbop,timedFetch,fetchMedia,makeQueue};
+ if(typeof module!=='undefined'&&module.exports)module.exports=root.LM37;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+</script>
+<style data-report-readable-layout>
+h1,h2,h3,p,figcaption,[contenteditable],[data-field]{word-break:normal;overflow-wrap:normal;hyphens:none}
+h1,h2,h3{text-wrap:balance;line-height:1.25;break-after:avoid}
+p,figcaption,[data-field]{orphans:3;widows:3}
+.report-header h1>[data-equipment-name]{display:block;margin-top:.15em}
+.report-header .meta{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:14px}
+.report-header .meta>span{display:block;min-width:0;max-width:100%;line-height:1.6}
+.report-header [data-value="date"]{display:inline;white-space:normal}
+@media(max-width:700px){.report-header h1{font-size:clamp(22px,5.7vw,30px)}.section h2{font-size:clamp(19px,4.6vw,24px)}.report-header .meta{font-size:14px}.report-header .meta b,.report-header .meta span{font-size:inherit}.header h1{font-size:clamp(20px,5vw,26px)}.header .meta{gap:12px;align-items:flex-start}.header .meta>div{white-space:normal}.header .meta strong{white-space:nowrap}}
+</style>
 </head>
 <body>
   <div class="toolbar">
-    <div class="local-note">🔒 Relatórios salvos somente neste PC ou celular · Não enviados ao banco de dados do Line Monitor</div>
+    <div class="local-note">🔒 Relatórios salvos somente neste celular · Não enviados ao banco de dados</div>
     <button class="save-btn" onclick="salvarAlteracoes()">📤 <span>Compartilhar</span></button>
     <button class="save-btn secondary" onclick="salvarRelatorioLocal()">💾 <span>Salvar relatório</span></button>
     <button class="save-btn secondary" onclick="abrirRelatoriosSalvos()">📁 <span>Relatórios</span></button>
@@ -177,7 +247,7 @@
           <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
           <button class="lang-btn" data-lang="ko">🇰🇷 한국어</button>
         </div>
-        <h1 data-i18n="title">Relatório de Ocorrências Diárias</h1>
+        <h1 data-i18n="title">Relatório diário</h1>
         <div class="sub" data-i18n="company_name">VD-Automação</div>
       </div>
       <div class="meta">
@@ -263,16 +333,15 @@
         opt_turno1:'1º Turno', opt_turno2:'2º Turno', opt_turno3:'3º Turno',
         opt_corretiva:'Corretiva', opt_preventiva:'Preventiva', opt_melhoria:'Melhoria', opt_proativa:'Proativa',
         opt_concluida:'Concluída', opt_pendente:'Pendente',
-        fld_tec_one:'Técnico responsável', fld_tec_many:'Técnicos responsáveis',
         toast_traduzindo:'Traduzindo textos...', toast_sem_internet:'Sem internet: alguns textos não foram traduzidos', company_lbl:'Nome da Empresa', company_name:'VD-Automação'
       },
       en: {
-        title:'Daily Occurrence Report',
+        title:'Daily Report',
         lbl_data:'Date:', lbl_turno:'Shift:',
         sum_occ:'Activities', sum_equip:'Equipment', sum_tec:'Technicians involved',
         recap_lbl:'Shift summary:', lbl_corretivas:'corrective', lbl_preventivas:'preventive', lbl_melhorias:'improvement',
         lbl_pendentes:'pending', lbl_concluidas:'all completed',
-        fld_equip:'Equipment', fld_tec:'Responsible technicians', fld_tec_one:'Responsible technician', fld_tec_many:'Responsible technicians', fld_hor:'Time',
+        fld_equip:'Equipment', fld_tec:'Responsible technician(s)', fld_hor:'Time',
         lbl_sem_video:'No video', occ_lbl:'Activity',
         sec_fotos:'Photos', sec_videos:'Videos',
         btn_add_foto:'Add Photo', btn_add_video:'Add Video',
@@ -292,7 +361,7 @@
         sum_occ:'활동 건수', sum_equip:'설비', sum_tec:'참여 기술자',
         recap_lbl:'근무 요약:', lbl_corretivas:'수정', lbl_preventivas:'예방', lbl_melhorias:'개선',
         lbl_pendentes:'대기 중', lbl_concluidas:'모두 완료됨',
-        fld_equip:'설비', fld_tec:'담당 기술자', fld_tec_one:'담당 기술자', fld_tec_many:'담당 기술자', fld_hor:'시간',
+        fld_equip:'설비', fld_tec:'담당 기술자', fld_hor:'시간',
         lbl_sem_video:'동영상 없음', occ_lbl:'활동',
         sec_fotos:'사진', sec_videos:'동영상',
         btn_add_foto:'사진 추가', btn_add_video:'동영상 추가',
@@ -367,7 +436,7 @@
       if (!texto || !texto.trim()) return texto;
       var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl='
         + origem + '&tl=' + destino + '&dt=t&q=' + encodeURIComponent(texto);
-      var resp = await fetch(url);
+      var resp = await LM37.fetchMedia(url);
       var bruto = await resp.text();
       var dados = JSON.parse(bruto);
       return dados[0].map(function(seg) { return seg[0]; }).join('');
@@ -473,7 +542,7 @@
         const origem = img.getAttribute('src') || '';
         if (!origem || origem.startsWith('data:')) return;
         try {
-          const resposta = await fetch(origem, {cache: 'no-store'});
+          const resposta = await LM37.fetchMedia(origem);
           if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
           img.setAttribute('src', await blobParaDataURL(await resposta.blob()));
           img.removeAttribute('srcset');
@@ -519,7 +588,7 @@
           req.onerror = function() { reject(req.error); };
         });
         banco.close();
-        mostrarToast('', 'Relatório salvo somente neste PC ou celular');
+        mostrarToast('', 'Relatório salvo no aparelho');
       } catch (e) {
         mostrarToast('', 'Não foi possível salvar o relatório');
       }
@@ -599,12 +668,12 @@
       if (!item) return;
       let html;
       try { html = await criarCopiaCompartilhavel(item.conteudo); }
-      catch (e) { mostrarToast('', 'Não foi possível preparar as fotos. Verifique a internet.'); return; }
+      catch (e) { mostrarToast('', e.message || 'Não foi possível preparar o relatório.'); return; }
       if (typeof Android !== 'undefined' && typeof Android.shareHtml === 'function') {
         Android.shareHtml(html);
         return;
       }
-      baixarArquivo(new Blob([html], {type:'text/html'}), 'relatorio_' + item.dataRelatorio + '.html');
+      baixarArquivo(new Blob([html], {type:'text/html'}), 'Relatorio_Diario_' + item.dataRelatorio + '.html');
     }
 
     async function excluirRelatorioSalvo(id) {
@@ -635,9 +704,9 @@
     async function salvarAlteracoes() {
       let html;
       try { html = await criarCopiaCompartilhavel(); }
-      catch (e) { mostrarToast('', 'Não foi possível preparar as fotos. Verifique a internet.'); return; }
+      catch (e) { mostrarToast('', e.message || 'Não foi possível preparar o relatório.'); return; }
       const blob = new Blob([html], {type: 'text/html'});
-      const nomeArquivo = 'relatorio_ocorrencias_editado.html';
+      const nomeArquivo = 'Relatorio_Diario.html';
 
       // Dentro do APK, usa o compartilhamento nativo do Android. O arquivo
       // é salvo e anexado ao WhatsApp, Gmail, Outlook ou outro app escolhido.
@@ -926,30 +995,17 @@
     recalcularResumo();
     function preencherDoLineMonitor(){
       try{
-        var bruto=localStorage.getItem('line_monitor_ocorrencia_relatorio_diario');if(!bruto)return;var x=JSON.parse(bruto),inicio=new Date(x.inicio),fim=x.fim?new Date(x.fim):null;
-        function urlMidiaRelatorio(valor){
-          var url=String(valor||'').trim();
-          if(!url||/^(data:|blob:)/i.test(url))return url;
-          try{
-            var resolvida=new URL(url,window.location.origin);
-            if(resolvida.origin==='https://evfjvnkaamkhsxzvkpex.supabase.co'&&resolvida.pathname.indexOf('/storage/')===0){
-              return window.location.origin+'/api/supabase'+resolvida.pathname+resolvida.search;
-            }
-            return resolvida.href;
-          }catch(e){return url}
-        }
+        if(document.documentElement.hasAttribute('data-daily-export'))return;var bruto=localStorage.getItem('line_monitor_ocorrencia_relatorio_diario');if(!bruto)return;var x=JSON.parse(bruto),inicio=new Date(x.inicio),fim=x.fim?new Date(x.fim):null;
         var data=document.querySelector('.date-input');if(data){var valor=inicio.getFullYear()+'-'+String(inicio.getMonth()+1).padStart(2,'0')+'-'+String(inicio.getDate()).padStart(2,'0');data.value=valor;data.setAttribute('value',valor)}
         var tipoBase=String(x.tipo||'').trim().split(' - ')[0];if(tipoBase==='Elétrica'||tipoBase==='Mecânica')tipoBase='Corretiva';var tipo=document.querySelector('.occ-type-label');if(tipo){tipo.dataset.tipo=tipoBase;tipo.textContent=tipoBase||'ATIVIDADE';var mapaTipo={Corretiva:'opt_corretiva',Preventiva:'opt_preventiva',Melhoria:'opt_melhoria',Proativa:'opt_proativa'};if(mapaTipo[tipoBase])tipo.setAttribute('data-i18n',mapaTipo[tipoBase]);else tipo.removeAttribute('data-i18n')}
         var status=document.querySelector('.occ-status-sel');if(status){Array.from(status.options).forEach(function(o){o.selected=o.value===x.status});atualizarStatusVisual(status)}
         var titulo=document.querySelector('.occ-title');if(titulo)titulo.textContent=(x.linha||'')+' - '+String(x.equip||'Equipamento').split('|')[0].trim();
         var equip=document.querySelector('[data-field="equipamento"] .val');if(equip)equip.textContent=String(x.equip||'').split('|').join(' · ');
         var tecnicos=document.querySelector('[data-field="tecnicos"] .val');if(tecnicos)tecnicos.textContent=x.resp||'';
-        var listaTecnicos=String(x.resp||'').split(',').map(function(nome){return nome.trim()}).filter(Boolean);
-        var rotuloTecnicos=document.querySelector('[data-field="tecnicos"] label');if(rotuloTecnicos){rotuloTecnicos.setAttribute('data-i18n',listaTecnicos.length>1?'fld_tec_many':'fld_tec_one');rotuloTecnicos.textContent=listaTecnicos.length>1?'Técnicos responsáveis':'Técnico responsável'}
         var horario=document.querySelector('[data-field="horario"] .val');if(horario)horario.textContent=inicio.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+(fim?' até '+fim.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'');
         var desc=document.querySelector('.occurrence .desc');if(desc)desc.textContent='Ocorrência: '+(x.ocorr||'')+(x.causa?'\n\nCausa identificada: '+x.causa:'')+(x.acao?'\n\nAção realizada: '+x.acao:'');
-        var grupo=document.querySelector('.media-group[data-tipo="foto"]');if(grupo){grupo.querySelectorAll('.media-block').forEach(function(e){e.remove()});var botao=grupo.querySelector('.add-media-btn');(Array.isArray(x.evidencias)?x.evidencias:[]).filter(function(e){return !String(e.tipo||e.type||'').includes('video')}).forEach(function(e,i){var url=urlMidiaRelatorio(e.url||e.data||e.src);if(!url)return;var bloco=document.createElement('div');bloco.className='media-block';bloco.innerHTML='<div class="photo-frame lb-trigger"><img alt="Foto"><button type="button" class="media-del-btn" onclick="removerMidia(this)">🗑</button><label class="photo-replace" onclick="event.stopPropagation()"><input type="file" accept="image/*" onchange="trocarImagem(this)"><span data-i18n="lbl_trocar">✎ Trocar</span></label></div><div class="photo-label" contenteditable="true">Evidência '+(i+1)+'</div><div class="photo-caption" contenteditable="true"></div>';bloco.querySelector('img').src=url;grupo.insertBefore(bloco,botao)})}
-        var grupoVideo=document.querySelector('.media-group[data-tipo="video"]');if(grupoVideo){grupoVideo.querySelectorAll('.media-block').forEach(function(e){e.remove()});var botaoVideo=grupoVideo.querySelector('.add-media-btn');(Array.isArray(x.evidencias)?x.evidencias:[]).filter(function(e){return String(e.tipo||e.type||'').includes('video')}).forEach(function(e,i){var url=urlMidiaRelatorio(e.url||e.data||e.src);if(!url)return;var bloco=document.createElement('div');bloco.className='media-block video';bloco.innerHTML='<div class="video-frame"><video controls preload="metadata"></video><button type="button" class="media-del-btn" onclick="removerMidia(this)">🗑</button><label class="photo-replace" onclick="event.stopPropagation()"><input type="file" accept="video/*" onchange="trocarVideo(this)"><span data-i18n="lbl_trocar">✎ Trocar</span></label></div><div class="photo-label" contenteditable="true">Vídeo '+(i+1)+'</div><div class="photo-caption" contenteditable="true"></div>';bloco.querySelector('video').src=url;grupoVideo.insertBefore(bloco,botaoVideo)})}
+        var grupo=document.querySelector('.media-group[data-tipo="foto"]');if(grupo){grupo.querySelectorAll('.media-block').forEach(function(e){e.remove()});var botao=grupo.querySelector('.add-media-btn');(Array.isArray(x.evidencias)?x.evidencias:[]).filter(function(e){return !String(e.tipo||e.type||'').includes('video')}).forEach(function(e,i){var url=e.url||e.data||e.src;if(!url)return;var bloco=document.createElement('div');bloco.className='media-block';bloco.innerHTML='<div class="photo-frame lb-trigger"><img alt="Foto"><button type="button" class="media-del-btn" onclick="removerMidia(this)">🗑</button><label class="photo-replace" onclick="event.stopPropagation()"><input type="file" accept="image/*" onchange="trocarImagem(this)"><span data-i18n="lbl_trocar">✎ Trocar</span></label></div><div class="photo-label" contenteditable="true">Evidência '+(i+1)+'</div><div class="photo-caption" contenteditable="true"></div>';bloco.querySelector('img').src=url;grupo.insertBefore(bloco,botao)})}
+        var grupoVideo=document.querySelector('.media-group[data-tipo="video"]');if(grupoVideo){grupoVideo.querySelectorAll('.media-block').forEach(function(e){e.remove()});var botaoVideo=grupoVideo.querySelector('.add-media-btn');(Array.isArray(x.evidencias)?x.evidencias:[]).filter(function(e){return String(e.tipo||e.type||'').includes('video')}).forEach(function(e,i){var url=e.url||e.data||e.src;if(!url)return;var bloco=document.createElement('div');bloco.className='media-block video';bloco.innerHTML='<div class="video-frame"><video controls preload="none"></video><button type="button" class="media-del-btn" onclick="removerMidia(this)">🗑</button><label class="photo-replace" onclick="event.stopPropagation()"><input type="file" accept="video/*" onchange="trocarVideo(this)"><span data-i18n="lbl_trocar">✎ Trocar</span></label></div><div class="photo-label" contenteditable="true">Vídeo '+(i+1)+'</div><div class="photo-caption" contenteditable="true"></div>';bloco.querySelector('video').src=url;grupoVideo.insertBefore(bloco,botaoVideo)})}
         idiomaAtual='pt';
         document.querySelectorAll(SELETOR_TEXTO_USUARIO).forEach(function(el){
           el.dataset.srcLang='pt';
@@ -963,5 +1019,40 @@
     }
     preencherDoLineMonitor();
   </script>
-</body>
+<script>const ANALYSIS_MAX_BYTES=19900000;
+let analysisCompressionBusy=false;
+function analysisFileSize(html){return new Blob([html],{type:'text/html;charset=utf-8'}).size}
+function checkAnalysisSize(html){const size=analysisFileSize(html);if(size>=ANALYSIS_MAX_BYTES)throw Error('O relatório ainda ultrapassa o limite de 20 MB. Reduza a duração ou a quantidade de vídeos e tente novamente.');return size}
+function mediaLoaded(media,event){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{cleanup();reject(Error('Não foi possível carregar uma evidência para reduzir o tamanho.'))},30000);function cleanup(){clearTimeout(timer);media.removeEventListener(event,ok);media.removeEventListener('error',bad)}function ok(){cleanup();resolve()}function bad(){cleanup();reject(Error('Não foi possível ler uma evidência.'))}media.addEventListener(event,ok,{once:true});media.addEventListener('error',bad,{once:true})})}
+async function resizeAnalysisImage(blob){if(blob.size<120000)return blob;let url=URL.createObjectURL(blob);try{let image=new Image(),ready=mediaLoaded(image,'load');image.src=url;await ready;const scale=Math.min(1,1400/image.naturalWidth,1400/image.naturalHeight);let canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));let ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);let result=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.72));return result&&result.size<blob.size?result:blob}finally{URL.revokeObjectURL(url)}}
+async function compressAnalysisVideo(blob,budget,index,total){if(blob.size<=budget)return blob;if(typeof MediaRecorder==='undefined'||!HTMLCanvasElement.prototype.captureStream)throw Error('Este celular não permite reduzir esse vídeo automaticamente. Use um vídeo mais curto para ficar abaixo de 20 MB.');let sourceURL=URL.createObjectURL(blob),video=document.createElement('video'),canvas=document.createElement('canvas'),stream,recorder,frame,timer;try{video.muted=true;video.playsInline=true;video.preload='auto';const loaded=mediaLoaded(video,'loadedmetadata');video.src=sourceURL;await loaded;const duration=video.duration;if(!Number.isFinite(duration)||duration<=0)throw Error('Não foi possível calcular a duração do vídeo.');const bitrate=Math.floor(budget*8/duration*.78);if(bitrate<90000)throw Error('Vídeos muito longos para o limite de 20 MB. Encurte um vídeo e tente novamente.');const scale=Math.min(1,(bitrate<300000?480:854)/video.videoWidth,480/video.videoHeight);canvas.width=Math.max(2,Math.floor(video.videoWidth*scale/2)*2);canvas.height=Math.max(2,Math.floor(video.videoHeight*scale/2)*2);stream=canvas.captureStream(24);let mime=['video/mp4','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));if(!mime)throw Error('Formato de compactação de vídeo indisponível neste celular.');let chunks=[];recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.min(1400000,bitrate)});const ctx=canvas.getContext('2d');const draw=()=>{ctx.drawImage(video,0,0,canvas.width,canvas.height);frame=requestAnimationFrame(draw)};const result=new Promise((resolve,reject)=>{recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType}));recorder.onerror=()=>reject(Error('Falha ao compactar vídeo.'));video.onended=()=>{if(recorder.state!=='inactive')recorder.stop()};timer=setTimeout(()=>{if(recorder.state!=='inactive')recorder.stop();reject(Error('Tempo excedido ao reduzir vídeo. Tente um trecho mais curto.'))},Math.min(900000,(duration*1.6+30)*1000))});translationNotice('Reduzindo vídeo '+index+' de '+total+' ('+Math.ceil(duration)+' s). Mantenha esta tela aberta…');recorder.start(1000);draw();await video.play();let compressed=await result;return compressed.size<blob.size?compressed:blob}finally{clearTimeout(timer);cancelAnimationFrame(frame);if(recorder&&recorder.state!=='inactive')recorder.stop();video.pause();video.removeAttribute('src');video.load();if(stream)stream.getTracks().forEach(t=>t.stop());URL.revokeObjectURL(sourceURL)}}
+async function optimizeAnalysisMedia(root){restoreDailyEvidence(root);const unique=new Map();for(const element of root.querySelectorAll('img[src],video[src]')){const source=element.getAttribute('src');if(!source)continue;if(!unique.has(source)){const response=await LM37.fetchMedia(source);if(!response.ok)throw Error('Não foi possível carregar uma evidência. Verifique a conexão.');unique.set(source,{blob:await response.blob(),type:element.tagName.toLowerCase(),nodes:[]})}unique.get(source).nodes.push(element)}const entries=Array.from(unique.values());let imageBytes=0;for(const item of entries.filter(x=>x.type==='img')){item.blob=await resizeAnalysisImage(item.blob);imageBytes+=item.blob.size}const videos=entries.filter(x=>x.type==='video');const rawVideoBytes=videos.reduce((n,x)=>n+x.blob.size,0);const available=Math.max(0,13500000-imageBytes);let i=0;for(const item of videos){let budget=Math.floor(available*(item.blob.size/(rawVideoBytes||1)));item.blob=await compressAnalysisVideo(item.blob,budget,++i,videos.length)}for(const item of entries){const data=await readEvidenceFile(item.blob);for(const node of item.nodes){node.setAttribute('src',data);node.removeAttribute('srcset')}}}
+function restoreDailyEvidence(root){
+  const pools={};
+  for(const scope of [document,root])scope.querySelectorAll('[data-analysis-assets]').forEach(e=>{try{Object.assign(pools,JSON.parse(e.textContent))}catch(_){}});
+  root.querySelectorAll('.photo-frame img,video[data-analysis-asset]').forEach(media=>{
+    const id=media.getAttribute('data-analysis-asset');
+    const source=media.getAttribute('src')||(id&&pools[id]);
+    if(!source)throw Error('Uma foto deste relatório antigo não está incorporada. Gere novamente o relatório pelo histórico da ocorrência.');
+    media.setAttribute('src',source);media.removeAttribute('data-analysis-asset');
+  });
+}
+function packAnalysisAssets(root){
+  restoreDailyEvidence(root);
+  root.querySelectorAll('[data-analysis-assets],[data-analysis-asset-loader]').forEach(e=>e.remove());
+  const meta=root.querySelector('meta[name="line-monitor-report-build"]');if(meta)meta.content='2026101809';
+  return root;
+}
+
+function makeAnalysisExport(root){root.querySelector('[data-bootstrap]')?.remove();root.querySelectorAll('.pbtn,.media-editor,#analysis-reports-panel').forEach(e=>e.remove());root.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));packAnalysisAssets(root);const html='<!doctype html>'+root.outerHTML;checkAnalysisSize(html);return html}
+async function shareCompactAnalysis(){if(analysisCompressionBusy)return;if(document.querySelector('.upload-tools input:disabled')){alert('Aguarde a inserção dos arquivos.');return}analysisCompressionBusy=true;try{closeZoom();configureReportVideos(false);translationNotice('Preparando relatório com menos de 20 MB…');const copy=document.documentElement.cloneNode(true);await optimizeAnalysisMedia(copy);const html=makeAnalysisExport(copy),size=analysisFileSize(html);if(typeof Android!=='undefined'&&typeof Android.shareAnalysisHtml==='function')Android.shareAnalysisHtml(html);else{const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download='Relatorio_Diario.html';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}translationNotice('Relatório pronto: '+(size/1000000).toFixed(2)+' MB.')}catch(e){translationNotice(e.message||'Não foi possível reduzir o relatório.')}finally{analysisCompressionBusy=false}}
+
+function readEvidenceFile(file){return blobParaDataURL(file)}
+function translationNotice(text){let status=document.getElementById('report-size-progress');if(!status){status=document.createElement('div');status.id='report-size-progress';status.className='editor-size-progress';status.setAttribute('role','status');status.style='padding:10px 18px;text-align:center;color:#173e5f;font:14px system-ui';const toolbar=document.querySelector('.toolbar');if(toolbar)toolbar.after(status)}status.textContent=text}
+function configureDailyVideos(root=document,start=false){root.querySelectorAll('video').forEach(v=>{for(const a of ['loop','muted','playsinline','webkit-playsinline'])v.setAttribute(a,'');v.loop=true;v.autoplay=false;v.muted=true;v.defaultMuted=true;v.playsInline=true;if(start){const p=v.play();if(p)p.catch(()=>{})}})}
+document.addEventListener('DOMContentLoaded',()=>{configureDailyVideos();new MutationObserver(records=>{if(records.some(r=>Array.from(r.addedNodes).some(n=>n.nodeType===1&&(n.matches('video')||n.querySelector('video')))))configureDailyVideos()}).observe(document.body,{childList:true,subtree:true})});
+function dailyExportFromCopy(copy){copy.setAttribute('data-daily-export','true');copy.querySelectorAll('.toolbar,#reportsPanel,.editor-size-progress').forEach(e=>e.remove());configureDailyVideos(copy,false);packAnalysisAssets(copy);const html='<!doctype html>'+copy.outerHTML;checkAnalysisSize(html);return html}
+async function criarCopiaCompartilhavel(conteudoSalvo){if(analysisCompressionBusy)throw Error('Aguarde a compactação em andamento.');analysisCompressionBusy=true;try{translationNotice('Preparando relatório com menos de 20 MB…');const copy=document.documentElement.cloneNode(true);if(conteudoSalvo!==undefined)copy.querySelector('.sheet').innerHTML=conteudoSalvo;await optimizeAnalysisMedia(copy);const html=dailyExportFromCopy(copy);translationNotice('Relatório pronto: '+(analysisFileSize(html)/1000000).toFixed(2)+' MB.');return html}finally{analysisCompressionBusy=false}}
+async function salvarRelatorioLocal(){if(analysisCompressionBusy)return;analysisCompressionBusy=true;let db;try{translationNotice('Reduzindo e salvando relatório neste celular…');const sheet=document.querySelector('.sheet').cloneNode(true);configureDailyVideos(sheet,false);await optimizeAnalysisMedia(sheet);const proof=document.documentElement.cloneNode(true);proof.querySelector('.sheet').innerHTML=sheet.innerHTML;const html=dailyExportFromCopy(proof);const dateInput=document.querySelector('.date-input');const item={id:Date.now(),dataRelatorio:dateInput&&dateInput.value?dateInput.value:new Date().toISOString().slice(0,10),salvoEm:new Date().toISOString(),conteudo:sheet.innerHTML};db=await abrirBancoRelatorios();await new Promise((resolve,reject)=>{const tx=db.transaction('relatorios','readwrite');tx.objectStore('relatorios').put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Não foi possível salvar.'))});mostrarToast('','Relatório salvo no aparelho');translationNotice('Relatório salvo: '+(analysisFileSize(html)/1000000).toFixed(2)+' MB.')}catch(e){mostrarToast('',e.message||'Não foi possível salvar.');translationNotice(e.message||'Não foi possível salvar o relatório.')}finally{if(db)db.close();analysisCompressionBusy=false}}
+</script></body>
 </html>
