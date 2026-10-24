@@ -32,9 +32,17 @@
     {
       "src": "relatorio_diario_v38_fotos.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "daily-export.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/automation/daily-report",
+      "dest": "/daily-export.js"
+    },
     {
       "src": "/api/supabase(?:/(.*))?",
       "dest": "/supabase-proxy.js"
