@@ -32,10 +32,6 @@
     {
       "src": "relatorio_diario_v38_fotos.html",
       "use": "@vercel/static"
-    },
-    {
-      "src": "daily-summary.js",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -66,10 +62,6 @@
     {
       "src": "/relatorio_melhoria_padrao\\.html",
       "dest": "/relatorio_melhoria_padrao.html"
-    },
-    {
-      "src": "/daily-summary\\.js",
-      "dest": "/daily-summary.js"
     },
     {
       "src": "/(.*)",

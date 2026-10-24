@@ -12,11 +12,7 @@ export default async function handler(req, res) {
   let targetPath = pos >= 0 ? raw.slice(pos + prefix.length) : '/';
   if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
 
-  const targetUrl = new URL(SUPABASE_URL.replace(/\/$/, '') + targetPath);
-  // Parâmetros de acesso do preview pertencem à Vercel, não à consulta do banco.
-  targetUrl.searchParams.delete('_vercel_share');
-  targetUrl.searchParams.delete('_vercel_no_cache');
-  const target = targetUrl.href;
+  const target = SUPABASE_URL.replace(/\/$/, '') + targetPath;
   const headers = {};
   for (const [k, v] of Object.entries(req.headers || {})) {
     const key = k.toLowerCase();
@@ -49,5 +45,3 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: 'Falha de comunicação do backend Line Monitor.', detail: String(e?.message || e) });
   }
 }
-
-
