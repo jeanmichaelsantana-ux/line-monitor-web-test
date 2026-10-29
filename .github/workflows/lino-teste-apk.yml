@@ -16,6 +16,17 @@ jobs:
         run: |
           mkdir -p app/src/main/assets
           cp index.html app/src/main/assets/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/assets/index.html')
+          s=p.read_text()
+          old="if(alvo.startsWith(SUPABASE_URL+'/'))"
+          new="if(alvo.startsWith(SUPABASE_URL+'/') && location.hostname !== 'evfjvnkaamkhsxzvkpex.supabase.co')"
+          if old not in s: raise RuntimeError('Supabase fetch proxy pattern not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+          print('Android: direct Supabase requests enabled')
+          PY
       - name: Extrair logo original da interface
         run: |
           python3 - <<'PY'
