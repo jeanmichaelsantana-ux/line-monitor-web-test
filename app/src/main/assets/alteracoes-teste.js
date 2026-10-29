@@ -1,6 +1,6 @@
 (function(){
 const key='lm_alteracoes_isoladas_v2';
-const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;'}[c]));
+const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function records(){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return []}}
 function init(){
  const area=document.getElementById('registro');if(!area)return;
