@@ -24,6 +24,7 @@ jobs:
           new="if(alvo.startsWith(SUPABASE_URL+'/') && location.hostname !== 'evfjvnkaamkhsxzvkpex.supabase.co')"
           if old not in s: raise RuntimeError('Supabase fetch proxy pattern not found')
           s=s.replace(old,new)
+          s=s.replace('Line Monitor Web', 'Line Monitor')
           p.write_text(s)
           print('Android: direct Supabase requests enabled')
           PY
