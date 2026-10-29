@@ -25,6 +25,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
+      - name: Integrate existing Line Monitor interface
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          script=Path('app/src/main/assets/alteracoes-teste.js').read_text(encoding='utf-8')
+          html=html.replace('</body>', '<script>'+script+'</script></body>')
+          Path('app/src/main/assets/index.html').write_text(html,encoding='utf-8')
+          PY
+          for file in lino.js chat_historico.js report28_override.js lm_reliability.js connected40.js; do
+            if [ -f "$file" ]; then cp "$file" app/src/main/assets/; fi
+          done
       - name: Build APK
         run: |
           chmod +x gradlew || true
