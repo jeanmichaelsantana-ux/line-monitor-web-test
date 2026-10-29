@@ -1,0 +1,12 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'br.com.linemonitor.teste'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'br.com.linemonitor.teste'
+        minSdk 24
+        targetSdk 28
+        versionCode 1
+        versionName '4.0-teste'
+    }
+}
