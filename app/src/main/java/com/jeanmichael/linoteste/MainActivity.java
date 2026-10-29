@@ -8,6 +8,6 @@ public class MainActivity extends Activity {
  WebView view = new WebView(this);
  view.getSettings().setJavaScriptEnabled(true);
  setContentView(view);
- view.loadUrl("https://line-monitor-web-test.vercel.app/");
+ view.loadUrl("https://project-1a0k9.vercel.app/");
  }
 }
