@@ -25,6 +25,7 @@ jobs:
           if old not in s: raise RuntimeError('Supabase fetch proxy pattern not found')
           s=s.replace(old,new)
           s=s.replace('Line Monitor Web', 'Line Monitor')
+          s=s.replace("rpc('solicitar_dispositivo_web'", "rpc('solicitar_dispositivo_app'")
           p.write_text(s)
           print('Android: direct Supabase requests enabled')
           PY
