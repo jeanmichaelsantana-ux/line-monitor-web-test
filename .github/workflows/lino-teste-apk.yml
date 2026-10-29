@@ -1,4 +1,4 @@
-name: Lino Android APK
+name: Line Monitor Teste Android APK
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -16,8 +16,23 @@ jobs:
         run: |
           mkdir -p app/src/main/assets
           cp index.html app/src/main/assets/index.html
+      - name: Extrair logo original da interface
+        run: |
+          python3 - <<'PY'
+          import re,base64,pathlib
+          html=pathlib.Path('index.html').read_text()
+          match=re.search(r'class="brand-logo"[^>]*src="data:image/[^;]+;base64,([^"]+)"',html)
+          if not match:
+              raise RuntimeError('Logo original nao encontrado no index.html')
+          logo=base64.b64decode(match.group(1))
+          extension='jpg' if logo.startswith(b'\\xff\\xd8') else 'png'
+          target=pathlib.Path('app/src/main/res/drawable-nodpi')
+          target.mkdir(parents=True,exist_ok=True)
+          (target/('line_monitor_logo.'+extension)).write_bytes(logo)
+          print('Logo extraido:',len(logo),'bytes',extension)
+          PY
       - run: gradle :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: Lino-Teste-APK
+          name: Line-Monitor-Teste-APK
           path: app/build/outputs/apk/debug/app-debug.apk
