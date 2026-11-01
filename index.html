@@ -1152,6 +1152,14 @@ async function runTechnicalQuery(raw){
     const link=String(x.fonte_url||x.url_manual||x.manual_url||x.link_manual||'').trim();
     if(/^https:\/\//i.test(link)&&!g.manual)g.manual=link;
    }
+   for(const [name,g] of grouped){
+    if(!/j1000/i.test(name))continue;
+    for(const code of Array.from(g.rows.keys())){if(!/^[a-z]\d[-–]\d{2,3}$/i.test(code))g.rows.delete(code);}
+    g.rows.set('d1-01','Referência de frequência 1 — velocidade nominal de operação, quando atribuída a esta referência; confirmar b1-01 e comando da máquina');
+    g.rows.set('d1-02','Referência de frequência 2 — pode ser usada para velocidade lenta (Slow); confirmar seleção pelas entradas e lógica da máquina');
+    g.rows.set('d1-03 a d1-08','Referências de frequência 3 a 8 — outras velocidades pré-selecionadas; confirmar qual corresponde a Slow e nominal na máquina');
+    g.rows.set('d1-17','Referência de frequência Jog — velocidade de Jog, quando esta função estiver selecionada; não equivale automaticamente a Slow');
+   }
    if(!grouped.size)say('Não encontrei parâmetros com código e função cadastrados para este modelo. Confira o fabricante e o modelo do inversor.');
    for(const [name,g] of grouped){
     const section=document.createElement('section');section.className='lino-param-sheet';section.style.cssText='padding:12px;background:#f6fbff;border:1px solid #c8dce8;border-radius:12px;margin:10px 0;overflow-x:auto';
