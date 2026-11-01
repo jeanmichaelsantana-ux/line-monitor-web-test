@@ -1175,9 +1175,9 @@ async function runTechnicalQuery(raw){
     const select=document.createElement('select');select.id='linoManualSelect';
     const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Selecionar manual';select.append(placeholder);
     for(const [name,g] of available){const option=document.createElement('option');option.value=g.manual;option.textContent=name;select.append(option)}
-    const link=document.createElement('a');link.textContent='Abrir manual';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;link.style.cssText='display:none;margin-top:12px;padding:10px;background:#086b8d;color:white;border-radius:8px;text-align:center;text-decoration:none';
+    const link=document.createElement('a');link.textContent='Abrir manual completo';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;link.style.cssText='display:none;margin-top:12px;padding:10px;background:#086b8d;color:white;border-radius:8px;text-align:center;text-decoration:none';
     select.onchange=()=>{const valid=/^https:\/\//i.test(select.value);link.hidden=!valid;link.style.display=valid?'block':'none';if(valid)link.href=select.value;else link.removeAttribute('href')};
-    footer.append(label,select,link);log.append(footer);
+    select.value=available[0][1].manual;select.onchange();footer.append(label,select,link);log.append(footer);
    }
   }else{
    if(isAlarmList)base.sort((a,b)=>String(a.modelo||a.equipamento||'').localeCompare(String(b.modelo||b.equipamento||''))||String(a.codigo_alarme||a.alarme||a.codigo||'').localeCompare(String(b.codigo_alarme||b.alarme||b.codigo||''),undefined,{numeric:true}));
