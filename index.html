@@ -1156,6 +1156,7 @@ async function runTechnicalQuery(raw){
    for(const [name,g] of grouped){
     if(!/j1000/i.test(name))continue;
     const alarmRows=[];for(const [code,fn] of Array.from(g.rows.entries())){if(!/^[a-z]\d[-–]\d{2,3}$/i.test(code)){alarmRows.push([code,fn]);g.rows.delete(code);}}
+    g.rows.set('b1-08','Comando de marcha no modo de programação (não libera todos os ajustes em operação)');
     g.rows.set('d1-01','Referência de frequência 1 (nominal, conforme configuração)');
     g.rows.set('d1-02','Referência de frequência 2 (Slow, conforme configuração)');
     g.rows.set('d1-03 a d1-08','Referências de frequência 3 a 8');
