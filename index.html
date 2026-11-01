@@ -1132,6 +1132,7 @@ async function runTechnicalQuery(raw){
  if(base.length){
   const params=!isAlarmList&&/\b(parametro|parametros|inversor|inversores)\b/.test(n);
   if(isAlarmList){base=base.filter(x=>{const kind=norm([x.tipo,x.categoria,x.tipo_registro,x.classificacao].filter(Boolean).join(' '));const code=String(x.codigo||x.codigo_alarme||x.alarme||'').trim();return !/parametro|parameter/.test(kind)&&!String(x.codigo_parametro||x.parametro||'').trim()&&!/^(?:pr\.?\s*\d+|p\d+)$/i.test(code);});}
+  const parameterSourceRows=base.slice();
   if(params){base=base.filter(x=>{const kind=norm([x.tipo,x.categoria,x.tipo_registro,x.classificacao].filter(Boolean).join(' '));const code=String(x.codigo_parametro||x.parametro||x.codigo||'').trim();return !/alarme|falha/.test(kind)&&!!code;});}
   const alarmCode=(raw.match(/\b\d{4,6}\b/)||[])[0]||'';
   const aliases=[['Fabricante',['fabricante','marca']],['Modelo',['modelo','equipamento']],['Código',['codigo','alarme','parametro','codigo_alarme','codigo_parametro']],['Descrição / função',['descricao','descricao_alarme','funcao','nome','titulo']],['Possíveis causas',['causa','causas','problema']],['Verificações recomendadas',['verificacao','verificacoes','diagnostico','acao_recomendada']],['Solução registrada',['solucao','solucoes','acao']]];
@@ -1160,6 +1161,26 @@ async function runTechnicalQuery(raw){
     g.rows.set('d1-03 a d1-08','Referências de frequência 3 a 8');
     g.rows.set('d1-17','Referência de frequência Jog');
     for(const [code,fn] of alarmRows)g.rows.set(code,fn);
+   }
+   for(const [name,g] of grouped){
+    if(!/mitsubishi|fr[- ]?[ade]\d{3,4}/i.test(name))continue;
+    const alarms=new Map();
+    for(const [code,fn] of Array.from(g.rows.entries())){if(!/^pr\.?\s*\d+$/i.test(code)){alarms.set(code,fn);g.rows.delete(code);}}
+    if(/fr[- ]?[de]700\b/i.test(name)){
+     g.rows.set('Pr.4','Multivelocidade alta (nominal, conforme configuração)');
+     g.rows.set('Pr.5','Multivelocidade média');
+     g.rows.set('Pr.6','Multivelocidade baixa (Slow, conforme configuração)');
+    }
+    for(const x of parameterSourceRows){
+     const key=[x.fabricante||x.marca,x.modelo||x.equipamento].filter(Boolean).join(' ').trim();
+     if(norm(key)!==norm(name))continue;
+     const code=String(x.codigo_alarme||x.alarme||x.codigo||'').trim();
+     const kind=norm([x.tipo,x.categoria,x.tipo_registro,x.classificacao].filter(Boolean).join(' '));
+     if(!code||/^pr\.?\s*\d+$/i.test(code)||String(x.codigo_parametro||x.parametro||'').trim())continue;
+     if(!/alarme|alarm|falha/.test(kind)&&!/^E[.\-]/i.test(code))continue;
+     const fn=String(x.descricao||x.descricao_alarme||x.funcao||x.nome||x.titulo||'').trim();if(fn)alarms.set(code,fn);
+    }
+    for(const [code,fn] of alarms)g.rows.set(code,fn);
    }
    if(!grouped.size)say('Não encontrei parâmetros com código e função cadastrados para este modelo. Confira o fabricante e o modelo do inversor.');
    for(const [name,g] of grouped){
