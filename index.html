@@ -1188,7 +1188,7 @@ async function runTechnicalQuery(raw){
    if(mitsubishiSheets.length>1){
     const merged=new Map();
     for(const [name,g] of mitsubishiSheets){for(const [code,fn] of g.rows){if(!merged.has(code))merged.set(code,new Map());const variants=merged.get(code);if(!variants.has(fn))variants.set(fn,[]);variants.get(fn).push(name.replace(/^mitsubishi\s*/i,''));}}
-    const rows=new Map();for(const [code,variants] of merged){rows.set(code,Array.from(variants,([fn,models])=>variants.size>1?fn+' ('+models.join(', ')+')':fn).join(' / '));}
+    const rows=new Map();for(const [code,variants] of merged){rows.set(code,Array.from(variants,([fn,models])=>variants.size>1||models.length<mitsubishiSheets.length?fn+' ('+models.join(', ')+')':fn).join(' / '));}
     parameterSheets.push(['Mitsubishi — consulta básica por modelo',{rows}]);
    }
    for(const entry of grouped){if(mitsubishiSheets.length>1&&mitsubishiSheets.some(([name])=>name===entry[0]))continue;parameterSheets.push(entry);}
