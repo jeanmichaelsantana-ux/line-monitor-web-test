@@ -1161,6 +1161,7 @@ async function runTechnicalQuery(raw){
     g.rows.set('d1-02','Referência de frequência 2 (Slow, conforme configuração)');
     g.rows.set('d1-03 a d1-08','Referências de frequência 3 a 8');
     g.rows.set('d1-17','Referência de frequência Jog');
+    const orderedParameters=Array.from(g.rows.entries()).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));g.rows=new Map(orderedParameters);
     for(const [code,fn] of alarmRows)g.rows.set(code,fn);
    }
    for(const [name,g] of grouped){
