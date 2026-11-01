@@ -1154,11 +1154,12 @@ async function runTechnicalQuery(raw){
    }
    for(const [name,g] of grouped){
     if(!/j1000/i.test(name))continue;
-    for(const code of Array.from(g.rows.keys())){if(!/^[a-z]\d[-–]\d{2,3}$/i.test(code))g.rows.delete(code);}
+    const alarmRows=[];for(const [code,fn] of Array.from(g.rows.entries())){if(!/^[a-z]\d[-–]\d{2,3}$/i.test(code)){alarmRows.push([code,fn]);g.rows.delete(code);}}
     g.rows.set('d1-01','Referência de frequência 1 (nominal, conforme configuração)');
     g.rows.set('d1-02','Referência de frequência 2 (Slow, conforme configuração)');
     g.rows.set('d1-03 a d1-08','Referências de frequência 3 a 8');
     g.rows.set('d1-17','Referência de frequência Jog');
+    for(const [code,fn] of alarmRows)g.rows.set(code,fn);
    }
    if(!grouped.size)say('Não encontrei parâmetros com código e função cadastrados para este modelo. Confira o fabricante e o modelo do inversor.');
    for(const [name,g] of grouped){
