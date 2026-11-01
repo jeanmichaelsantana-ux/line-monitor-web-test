@@ -1183,7 +1183,16 @@ async function runTechnicalQuery(raw){
     for(const [code,fn] of alarms)g.rows.set(code,fn);
    }
    if(!grouped.size)say('Não encontrei parâmetros com código e função cadastrados para este modelo. Confira o fabricante e o modelo do inversor.');
-   for(const [name,g] of grouped){
+   const parameterSheets=[];
+   const mitsubishiSheets=Array.from(grouped.entries()).filter(([name])=>/mitsubishi|fr[- ]?[ade]\d{3,4}/i.test(name));
+   if(mitsubishiSheets.length>1){
+    const merged=new Map();
+    for(const [name,g] of mitsubishiSheets){for(const [code,fn] of g.rows){if(!merged.has(code))merged.set(code,new Map());const variants=merged.get(code);if(!variants.has(fn))variants.set(fn,[]);variants.get(fn).push(name.replace(/^mitsubishi\s*/i,''));}}
+    const rows=new Map();for(const [code,variants] of merged){rows.set(code,Array.from(variants,([fn,models])=>variants.size>1?fn+' ('+models.join(', ')+')':fn).join(' / '));}
+    parameterSheets.push(['Mitsubishi — consulta básica por modelo',{rows}]);
+   }
+   for(const entry of grouped){if(mitsubishiSheets.length>1&&mitsubishiSheets.some(([name])=>name===entry[0]))continue;parameterSheets.push(entry);}
+   for(const [name,g] of parameterSheets){
     const section=document.createElement('section');section.className='lino-param-sheet';section.style.cssText='padding:12px;background:#f6fbff;border:1px solid #c8dce8;border-radius:12px;margin:10px 0;overflow-x:auto';
     const heading=document.createElement('h3');heading.textContent=name+' — Parâmetros';section.append(heading);const note=document.createElement('p');note.textContent='Consulta rápida: código e função. Confira os ajustes e valores no manual do modelo antes de qualquer alteração.';note.style.cssText='font-size:13px;line-height:1.45;margin:4px 0 12px;color:#42576b';section.append(note);
     const table=document.createElement('table');table.className='lino-param-table';table.style.cssText='width:100%;border-collapse:collapse;font-size:14px;line-height:1.4';
