@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.webkit.JavascriptInterface;
+import java.util.Locale;
 import android.os.Message;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -13,6 +16,15 @@ import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends Activity {
+ private TextToSpeech tts;
+ private volatile boolean ttsReady=false;
+ private final class LinoVoiceBridge {
+  @JavascriptInterface public void selectVoice(String voice) { }
+  @JavascriptInterface public void speak(String message) { runOnUiThread(() -> { if(ttsReady && message!=null) { tts.stop(); tts.speak(message,TextToSpeech.QUEUE_FLUSH,null,"lino-voice"); } else { android.widget.Toast.makeText(MainActivity.this,"Ative a voz em português nas configurações de texto para fala do Android.",android.widget.Toast.LENGTH_LONG).show(); } }); }
+  @JavascriptInterface public void stop() { runOnUiThread(() -> { if(tts!=null) tts.stop(); }); }
+  @JavascriptInterface public boolean isSpeaking() { return tts!=null && tts.isSpeaking(); }
+ }
+ @Override protected void onDestroy() { if(tts!=null) {tts.stop();tts.shutdown();} super.onDestroy(); }
  private void openExternal(String url) {
   if (url == null || !(url.startsWith("https://") || url.startsWith("http://"))) return;
   try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
@@ -40,7 +52,9 @@ public class MainActivity extends Activity {
  }
  @Override public void onCreate(Bundle state) {
   super.onCreate(state);
+  tts=new TextToSpeech(this, status -> { if(status==TextToSpeech.SUCCESS) { int result=tts.setLanguage(new Locale("pt","BR")); tts.setPitch(0.85f);tts.setSpeechRate(1.0f);ttsReady=(result!=TextToSpeech.LANG_MISSING_DATA && result!=TextToSpeech.LANG_NOT_SUPPORTED); } });
   WebView view = new WebView(this);
+  view.addJavascriptInterface(new LinoVoiceBridge(), "LinoVoice");
   view.setWebViewClient(navigationClient());
   view.getSettings().setJavaScriptEnabled(true);
   view.getSettings().setDomStorageEnabled(true);
