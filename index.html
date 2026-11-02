@@ -1104,8 +1104,8 @@ function appendRobotManuals(){
  const select=document.createElement('select');select.id=label.htmlFor;select.style.cssText='width:100%;margin:8px 0';
  const empty=document.createElement('option');empty.value='';empty.textContent='Selecionar manual';select.append(empty);
  groups.forEach(([title,manuals])=>{
-  const group=document.createElement('optgroup');group.label=title;
-  manuals.forEach(([name,id])=>{const option=document.createElement('option');option.value=id;option.textContent=title+' — '+name;group.append(option);});select.append(group);
+  const group=document.createElement('optgroup');group.label=title.replace('Manual de manutenção elétrica','Manutenção elétrica').replace('Manual de manutenção do robô','Manutenção do robô').replace('Manual de programação','Programação RAPID');
+  manuals.forEach(([name,id])=>{const option=document.createElement('option');option.value=id;option.textContent=name.replace(' — controlador','').replace('IRC5 — RAPID RobotWare 6','IRC5 — RobotWare 6').replace('OmniCore — RAPID RobotWare 7','OmniCore — RobotWare 7');group.append(option);});select.append(group);
  });
  const link=document.createElement('a');link.textContent='Abrir manual completo';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;
  link.style.cssText='display:none;margin:12px 0 0;padding:10px;background:#086b8d;color:white;border-radius:8px;text-align:center;text-decoration:none';
