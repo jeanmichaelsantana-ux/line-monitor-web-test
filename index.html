@@ -1092,6 +1092,25 @@ out+='Próximo passo: comparar o alarme, o sintoma e as condições atuais com e
 const featureHelp=document.createElement('button');featureHelp.type='button';featureHelp.className='secondary';featureHelp.textContent='Ajuda do Lino';featureHelp.style='margin-top:6px';voicebar.append(featureHelp);
 featureHelp.onclick=()=>{el('chatSetup').hidden=true;el('chatConversation').hidden=false;el('chatContextText').textContent='Ajuda do Lino';log.textContent='';say('Como posso ajudar?\n\n• Falhas: digite VL01 vácuo.\n• Alarmes ABB: digite alarme 71058 ABB.\n• Inversores: digite parâmetros Yaskawa J1000.\n• Histórico: consulte ocorrências e ações registradas.\n\nMostro descrições, causas, soluções e valores somente quando cadastrados na base técnica.');};
 function isTechnicalQuery(q){return /\b(?:alarme|alarm|erro|codigo|código|parametro|parâmetro|parametros|parâmetros|inversor|abb|irc5|omnicore|yaskawa|j1000|mitsubishi|fr[- ]?[ade]\d|ig5a|\b71058\b)\b/i.test(q);}
+function appendRobotManuals(){
+ const footer=document.createElement('section');footer.className='lino-manual-selector';footer.style.cssText='padding:14px;background:white;border:1px solid #c8dce8;border-radius:12px;margin:14px 0';
+ const heading=document.createElement('h3');heading.textContent='Manuais completos — Robôs ABB';footer.append(heading);
+ const groups=[
+  ['📘 Manual elétrico', [['IRC5 — controlador','3HAC047136-001'],['OmniCore C30 Type B — controlador','3HAC097281-001']]],
+  ['📙 Manual mecânico', [['IRB 1600 / 1660','3HAC026660-001'],['IRB 6700','3HAC044266-001']]],
+  ['📗 Manual de programação', [['IRC5 — RAPID RobotWare 6','3HAC050917-001'],['OmniCore — RAPID RobotWare 7','3HAC065038-001']]]
+ ];
+ groups.forEach(([title,manuals],i)=>{
+  const label=document.createElement('label');label.textContent=title;label.htmlFor='linoRobotManual'+i;
+  const select=document.createElement('select');select.id=label.htmlFor;select.style.cssText='width:100%;margin:8px 0';
+  const empty=document.createElement('option');empty.value='';empty.textContent='Selecione o modelo / versão';select.append(empty);
+  manuals.forEach(([name,id])=>{const o=document.createElement('option');o.value=id;o.textContent=name;select.append(o);});
+  const link=document.createElement('a');link.textContent='Abrir manual completo';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;
+  link.style.cssText='display:none;margin:4px 0 16px;padding:10px;background:#086b8d;color:white;border-radius:8px;text-align:center;text-decoration:none';
+  select.onchange=()=>{link.hidden=!select.value;link.style.display=select.value?'block':'none';if(select.value)link.href='https://search.abb.com/library/Download.aspx?DocumentID='+encodeURIComponent(select.value)+'&LanguageCode=en&DocumentPartId=&Action=Launch';else link.removeAttribute('href');};
+  footer.append(label,select,link);
+ });log.append(footer);
+}
 async function runTechnicalQuery(raw){
  const status=el('linoMicStatus');status.textContent='Consultando base técnica e histórico…';
  el('chatSetup').hidden=true;el('chatConversation').hidden=false;el('chatContextText').textContent='Consulta técnica';log.textContent='';el('chatQuick').textContent='';el('chatDraft').hidden=true;
@@ -1227,20 +1246,20 @@ async function runTechnicalQuery(raw){
     const article=document.createElement('article');article.className='lino-alarm-card';
     const pick=(keys)=>keys.map(k=>x[k]).find(v=>v!==null&&v!==undefined&&String(v).trim())||'';
     const fields=[['Alarme',pick(['codigo','codigo_alarme','alarme'])],['Equipamento', [pick(['fabricante','marca']),pick(['modelo','equipamento'])].filter(Boolean).join(' ')],['Descrição',pick(['descricao','descricao_alarme','nome','titulo'])],['Possíveis causas',pick(['causa','causas','problema'])],['O que verificar',pick(['verificacao','verificacoes','diagnostico','acao_recomendada'])]];
-    // Orientação geral quando a base contém apenas descrição do alarme; nunca afirmar diagnóstico confirmado.
-    const code=String(pick(['codigo','codigo_alarme','alarme'])).trim();
-    const maker=norm([pick(['fabricante','marca']),pick(['modelo','equipamento'])].join(' '));
-    if(code==='71058'&&maker.includes('abb')&&maker.includes('irc5')){
-     if(!fields[3][1])fields[3][1]='Hipóteses gerais (não confirmadas): cabo ou conector de comunicação com mau contato; alimentação ausente na unidade de I/O; falha de rede ou da unidade.';
-     if(!fields[4][1])fields[4][1]='1. Conferir alimentação e LEDs da unidade de I/O.\n2. Inspecionar cabos e conectores.\n3. Conferir diagnósticos da rede e mensagens adicionais do controlador.';
-    }else{
-     if(!fields[3][1])fields[3][1]='Não cadastradas para este alarme.';
-     if(!fields[4][1])fields[4][1]='Consultar o diagnóstico e o manual específico do fabricante antes de intervir.';
+    const content=String(pick(['conteudo','conteúdo','orientacao','detalhes'])).trim();
+    const parts=content.split(/(Possíveis causas|Causas prováveis|O que verificar|Verificações recomendadas|Solução|Ação recomendada|Validação)\s*:/gi);
+    let remainder=parts[0].trim();
+    for(let i=1;i<parts.length;i+=2){const label=norm(parts[i]),value=(parts[i+1]||'').trim();if(!value)continue;
+     if(/causa/.test(label)){if(!fields[3][1])fields[3][1]=value;}
+     else if(/verific/.test(label)){if(!fields[4][1])fields[4][1]=value;}
+
     }
+    if(remainder)fields[2][1]=[fields[2][1],remainder].filter(Boolean).join('\n');
     for(const [label,value] of fields){if(!value)continue;const line=document.createElement('div');line.style.cssText='padding:7px 0;border-bottom:1px solid #dce8f0;white-space:pre-wrap;overflow-wrap:anywhere';const strong=document.createElement('strong');strong.textContent=label+': ';line.append(strong,document.createTextNode(String(value)));article.append(line);}
     if(!article.childNodes.length)return;
     article.style.cssText='margin:10px 0;padding:12px;border:1px solid #b9d4e6;border-radius:12px;background:#f6fbff;color:#183d56';log.append(article);
    });
+   if(base.some(x=>/abb|irc5|omnicore/i.test([x.fabricante,x.modelo].join(' '))))appendRobotManuals();
   }
  }
  if(found.length&&!isAlarmList&&!(/\b(parametro|parametros|inversor|inversores)\b/.test(n)&&base.length)){say('Encontrei '+found.length+' ocorrência(s) relacionadas no histórico. São referências de manutenção, não confirmação da descrição oficial do alarme.');found.forEach(r=>caseCard(r));}
