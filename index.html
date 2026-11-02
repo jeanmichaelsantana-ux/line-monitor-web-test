@@ -1100,19 +1100,18 @@ function appendRobotManuals(){
   ['Manual de manutenção do robô', [['IRB 1600 / 1660','3HAC026660-001'],['IRB 6700','3HAC044266-001']]],
   ['Manual de programação', [['IRC5 — RAPID RobotWare 6','3HAC050917-001'],['OmniCore — RAPID RobotWare 7','3HAC065038-001']]]
  ];
- const typeLabel=document.createElement('label');typeLabel.textContent='Tipo de manual';typeLabel.htmlFor='linoRobotManualType';
- const type=document.createElement('select');type.id=typeLabel.htmlFor;
- const modelLabel=document.createElement('label');modelLabel.textContent='Modelo / versão';modelLabel.htmlFor='linoRobotManual';
- const select=document.createElement('select');select.id=modelLabel.htmlFor;select.disabled=true;
- for(const field of [type,select])field.style.cssText='width:100%;margin:6px 0 14px;padding:12px;font-size:16px;border:1px solid #cbd9e3;border-radius:10px;background:#fff;color:#183349';
- function option(parent,text,value){const o=document.createElement('option');o.textContent=text;o.value=value;parent.append(o);}
- option(type,'Selecionar tipo','');['Manutenção elétrica','Manutenção do robô','Programação RAPID'].forEach((name,i)=>option(type,name,String(i)));
- option(select,'Selecione o tipo primeiro','');
- const link=document.createElement('a');link.textContent='Abrir manual completo';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;
- link.style.cssText='display:none;margin:2px 0 0;padding:12px;background:#086b8d;color:white;border-radius:10px;text-align:center;text-decoration:none;font-weight:600';
+ const label=document.createElement('label');label.textContent='Escolha o manual';label.htmlFor='linoRobotManual';
+ const select=document.createElement('select');select.id=label.htmlFor;select.style.cssText='width:100%;margin:8px 0;padding:12px;font-size:16px;border:1px solid #cbd9e3;border-radius:10px;background:#fff;color:#183349';
+ const empty=document.createElement('option');empty.value='';empty.textContent='Selecionar manual';select.append(empty);
+ const categories=['Manutenção elétrica','Manutenção mecânica do robô','Programação RAPID'];
+ groups.forEach(([,manuals],i)=>{
+  const group=document.createElement('optgroup');group.label=categories[i];
+  manuals.forEach(([name,id])=>{const option=document.createElement('option');option.value=id;option.textContent=name.replace(' — controlador','').replace('IRC5 — RAPID RobotWare 6','IRC5 — RobotWare 6').replace('OmniCore — RAPID RobotWare 7','OmniCore — RobotWare 7');group.append(option);});select.append(group);
+ });
+ const link=document.createElement('a');link.textContent='Abrir manual';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;
+ link.style.cssText='display:none;margin:12px 0 0;padding:12px;background:#086b8d;color:white;border-radius:10px;text-align:center;text-decoration:none;font-weight:600';
  select.onchange=()=>{link.hidden=!select.value;link.style.display=select.value?'block':'none';if(select.value)link.href='https://search.abb.com/library/Download.aspx?DocumentID='+encodeURIComponent(select.value)+'&LanguageCode=en&DocumentPartId=&Action=Launch';else link.removeAttribute('href');};
- type.onchange=()=>{select.textContent='';select.disabled=type.value==='';option(select,select.disabled?'Selecione o tipo primeiro':'Selecionar modelo','');if(!select.disabled)groups[Number(type.value)][1].forEach(([name,id])=>option(select,name.replace(' — controlador','').replace(' — RAPID RobotWare',' — RobotWare'),id));select.onchange();};
- footer.append(typeLabel,type,modelLabel,select,link);log.append(footer);
+ footer.append(label,select,link);log.append(footer);
 }
 async function runTechnicalQuery(raw){
  const status=el('linoMicStatus');status.textContent='Consultando base técnica e histórico…';
