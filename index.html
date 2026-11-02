@@ -1100,16 +1100,17 @@ function appendRobotManuals(){
   ['Manual de manutenção do robô', [['IRB 1600 / 1660','3HAC026660-001'],['IRB 6700','3HAC044266-001']]],
   ['Manual de programação', [['IRC5 — RAPID RobotWare 6','3HAC050917-001'],['OmniCore — RAPID RobotWare 7','3HAC065038-001']]]
  ];
- groups.forEach(([title,manuals],i)=>{
-  const label=document.createElement('label');label.textContent=title;label.htmlFor='linoRobotManual'+i;
-  const select=document.createElement('select');select.id=label.htmlFor;select.style.cssText='width:100%;margin:8px 0';
-  const empty=document.createElement('option');empty.value='';empty.textContent='Selecione o modelo / versão';select.append(empty);
-  manuals.forEach(([name,id])=>{const o=document.createElement('option');o.value=id;o.textContent=name;select.append(o);});
-  const link=document.createElement('a');link.textContent='Abrir manual completo';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;
-  link.style.cssText='display:none;margin:4px 0 16px;padding:10px;background:#086b8d;color:white;border-radius:8px;text-align:center;text-decoration:none';
-  select.onchange=()=>{link.hidden=!select.value;link.style.display=select.value?'block':'none';if(select.value)link.href='https://search.abb.com/library/Download.aspx?DocumentID='+encodeURIComponent(select.value)+'&LanguageCode=en&DocumentPartId=&Action=Launch';else link.removeAttribute('href');};
-  footer.append(label,select,link);
- });log.append(footer);
+ const label=document.createElement('label');label.textContent='Selecione o manual e o modelo';label.htmlFor='linoRobotManual';
+ const select=document.createElement('select');select.id=label.htmlFor;select.style.cssText='width:100%;margin:8px 0';
+ const empty=document.createElement('option');empty.value='';empty.textContent='Selecionar manual';select.append(empty);
+ groups.forEach(([title,manuals])=>{
+  const group=document.createElement('optgroup');group.label=title;
+  manuals.forEach(([name,id])=>{const option=document.createElement('option');option.value=id;option.textContent=title+' — '+name;group.append(option);});select.append(group);
+ });
+ const link=document.createElement('a');link.textContent='Abrir manual completo';link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;
+ link.style.cssText='display:none;margin:12px 0 0;padding:10px;background:#086b8d;color:white;border-radius:8px;text-align:center;text-decoration:none';
+ select.onchange=()=>{link.hidden=!select.value;link.style.display=select.value?'block':'none';if(select.value)link.href='https://search.abb.com/library/Download.aspx?DocumentID='+encodeURIComponent(select.value)+'&LanguageCode=en&DocumentPartId=&Action=Launch';else link.removeAttribute('href');};
+ footer.append(label,select,link);log.append(footer);
 }
 async function runTechnicalQuery(raw){
  const status=el('linoMicStatus');status.textContent='Consultando base técnica e histórico…';
