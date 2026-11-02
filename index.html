@@ -1320,9 +1320,9 @@ try{
  const queue=[];for(const sentence of chunks){for(let i=0;i<sentence.length;i+=180)queue.push(sentence.slice(i,i+180));}
  const run=current;
  function next(){if(current!==run)return;const text=queue.shift();if(!text){finish();return;}
- const voice=synth.getVoices().find(v=>/pt-br-x-ptd-network/i.test(v.name+' '+v.voiceURI));
+ const voices=synth.getVoices();const available=voices.filter(v=>/^pt[-_]br/i.test(v.lang));const voice=voices.find(v=>/pt[-_]br[-_]x[-_]ptd/i.test(v.name+' '+v.voiceURI))||available.find(v=>/google|portugu/i.test(v.name))||available[0];
  if(!voice){finish();state.textContent='A voz original do Lino não está disponível neste navegador.';return;}
- const u=new SpeechSynthesisUtterance(text);u.voice=voice;u.lang='pt-BR';u.rate=1;u.pitch=1;
+ const u=new SpeechSynthesisUtterance(text);u.voice=voice;u.lang='pt-BR';u.rate=1;u.pitch=0.8;
  u.onstart=()=>{panel.classList.add('lino-speaking');launch.classList.add('lino-speaking');state.textContent='Lino está falando…';};u.onend=next;u.onerror=()=>{finish();state.textContent='Voz indisponível neste dispositivo.';};synth.resume();synth.speak(u);}
  if(synth.getVoices().length)next();else{const ready=()=>{synth.removeEventListener('voiceschanged',ready);if(current===run)next();};synth.addEventListener('voiceschanged',ready,{once:true});}
  }
