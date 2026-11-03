@@ -40,9 +40,17 @@
     {
       "src": "lino-ig5a.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "lino-gemini.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/lino-gemini\\.html",
+      "dest": "/lino-gemini.html"
+    },
     {
       "src": "/lino-ig5a\\.html",
       "dest": "/lino-ig5a.html"
