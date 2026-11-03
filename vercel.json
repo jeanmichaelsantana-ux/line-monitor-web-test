@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "lino-gemini-api.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "supabase-proxy.js",
       "use": "@vercel/node"
     },
@@ -47,6 +51,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/lino-gemini",
+      "dest": "/lino-gemini-api.js"
+    },
     {
       "src": "/lino-gemini\\.html",
       "dest": "/lino-gemini.html"
