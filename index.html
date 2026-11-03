@@ -731,7 +731,7 @@ function idioma(l){document.querySelectorAll('[data-'+l+']').forEach(function(e)
 <script>
 /* LINO_GEMINI_CHAT_INTEGRATION_V1 */
 (function(){
- const endpoint='https://evfjvnkaamkhsxzvkpex.supabase.co/functions/v1/lino-gemini-web-test';
+ const endpoint='/api/lino-gemini';
  const panel=document.getElementById('lmChat');if(!panel)return;
  const form=document.getElementById('linoVoiceSearch'),input=document.getElementById('linoCommand'),log=document.getElementById('chatLog');if(!form||!input||!log)return;
  let busy=false;
@@ -750,7 +750,7 @@ function idioma(l){document.querySelectorAll('[data-'+l+']').forEach(function(e)
   finally{busy=false;input.value='';}
  },true);
 })();
-</script>
+<\/script>
 </body></html>`;if(window.Android&&typeof Android.saveHtml==='function')Android.saveHtml(html);window.location.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))}
 
 async function gerarRelatorioDiarioPadrao(id){
