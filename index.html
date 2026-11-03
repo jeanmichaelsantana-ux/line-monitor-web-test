@@ -727,7 +727,31 @@ let html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta na
 <footer class="foot" data-pt="Line Monitor · Dashboard Gerencial" data-en="Line Monitor · Management Dashboard" data-ko="Line Monitor · 관리 대시보드">Line Monitor · Dashboard Gerencial</footer></div><script>
 function compartilharDashboard(){var conteudo='<!doctype html>'+document.documentElement.outerHTML;if(window.Android&&typeof Android.shareHtml==='function'){Android.shareHtml(conteudo);return}try{var arquivo=new File([conteudo],'Dashboard_Line_Monitor.html',{type:'text/html'});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[arquivo]}))){navigator.share({title:'Dashboard Line Monitor',files:[arquivo]});return}}catch(e){}alert('Não foi possível compartilhar o dashboard neste dispositivo.')}
 function tempo(s,l){s=Math.max(0,Math.round(Number(s)||0));if(!s)return'';var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),r=s%60;if(l==='ko')return((h?h+'시간 ':'')+(m?m+'분 ':'')+(r||(!h&&!m)?r+'초':'')).trim();return((h?h+'h ':'')+(m?m+'min ':'')+(r||(!h&&!m)?r+(l==='pt'?' seg':'s'):'')).trim()}
-function idioma(l){document.querySelectorAll('[data-'+l+']').forEach(function(e){e.textContent=e.getAttribute('data-'+l)});document.querySelectorAll('[data-tempo]').forEach(function(e){e.textContent=tempo(e.getAttribute('data-tempo'),l)});document.documentElement.lang=l==='ko'?'ko':(l==='en'?'en':'pt-BR');document.title=l==='ko'?'Line Monitor 관리 대시보드':(l==='en'?'Line Monitor Management Dashboard':'Dashboard Gerencial Line Monitor')}document.addEventListener('click',function(e){var b=e.target.closest('[data-lang]');if(b){e.preventDefault();idioma(b.getAttribute('data-lang'))}})<\/script></body></html>`;if(window.Android&&typeof Android.saveHtml==='function')Android.saveHtml(html);window.location.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))}
+function idioma(l){document.querySelectorAll('[data-'+l+']').forEach(function(e){e.textContent=e.getAttribute('data-'+l)});document.querySelectorAll('[data-tempo]').forEach(function(e){e.textContent=tempo(e.getAttribute('data-tempo'),l)});document.documentElement.lang=l==='ko'?'ko':(l==='en'?'en':'pt-BR');document.title=l==='ko'?'Line Monitor 관리 대시보드':(l==='en'?'Line Monitor Management Dashboard':'Dashboard Gerencial Line Monitor')}document.addEventListener('click',function(e){var b=e.target.closest('[data-lang]');if(b){e.preventDefault();idioma(b.getAttribute('data-lang'))}})<\/script>
+<script>
+/* LINO_GEMINI_CHAT_INTEGRATION_V1 */
+(function(){
+ const endpoint='https://evfjvnkaamkhsxzvkpex.supabase.co/functions/v1/lino-gemini-web-test';
+ const panel=document.getElementById('lmChat');if(!panel)return;
+ const form=document.getElementById('linoVoiceSearch'),input=document.getElementById('linoCommand'),log=document.getElementById('chatLog');if(!form||!input||!log)return;
+ let busy=false;
+ function token(){try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!/^sb-.*-auth-token$/.test(k))continue;const s=JSON.parse(localStorage.getItem(k)||'{}');if(s.access_token)return s.access_token;}}catch(e){}return null;}
+ function add(t,user){const a=document.createElement('article');a.textContent=t;if(user)a.className='user';log.appendChild(a);log.scrollTop=log.scrollHeight;return a;}
+ form.addEventListener('submit',async function(e){
+  const question=input.value.trim();if(!question||busy)return;
+  const jwt=token();if(!jwt)return; // Mantém consulta local quando não há sessão Supabase Auth.
+  e.preventDefault();e.stopImmediatePropagation();busy=true;
+  document.getElementById('chatConversation').hidden=false;
+  document.getElementById('chatSetup').hidden=true;
+  add(question,true);const pending=add('Lino está analisando…');
+  try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({pergunta:question})});const data=await response.json();if(!response.ok)throw Error(data.erro||'Erro na IA');const answer=data.resposta||'Não recebi uma resposta.';pending.textContent=answer;
+   if(typeof window.linoReadWithPresentationVoice==='function')window.linoReadWithPresentationVoice(answer);
+  }catch(err){pending.textContent='Não consegui consultar a IA agora: '+String(err.message||err)+'. As consultas locais continuam disponíveis.';}
+  finally{busy=false;input.value='';}
+ },true);
+})();
+</script>
+</body></html>`;if(window.Android&&typeof Android.saveHtml==='function')Android.saveHtml(html);window.location.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))}
 
 async function gerarRelatorioDiarioPadrao(id){
   let x=dados.find(o=>String(o.id)===String(id));
