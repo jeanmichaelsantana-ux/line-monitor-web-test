@@ -36,9 +36,17 @@
     {
       "src": "daily-export.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "lino-ig5a.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/lino-ig5a\\.html",
+      "dest": "/lino-ig5a.html"
+    },
     {
       "src": "/api/automation/daily-report",
       "dest": "/daily-export.js"
