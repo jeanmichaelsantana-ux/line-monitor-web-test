@@ -14,13 +14,16 @@ export default async function handler(req, res) {
     });
     if (!auth.ok) return res.status(401).json({ erro: 'Sessão inválida.' });
     const pergunta = typeof req.body?.pergunta === 'string' ? req.body.pergunta.trim() : '';
-    if (!pergunta || pergunta.length > 1500) return res.status(400).json({ erro: 'Pergunta inválida (máximo 1500 caracteres).' });
+    const imagem = req.body?.imagem;
+    if (pergunta.length > 1500) return res.status(400).json({ erro: 'Pergunta excede 1500 caracteres.' });
+    if (imagem != null && (typeof imagem !== 'object' || !['image/jpeg','image/png','image/webp'].includes(imagem.mimeType) || typeof imagem.data !== 'string' || imagem.data.length > 5500000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(imagem.data))) return res.status(400).json({ erro: 'Imagem inválida. Use JPG, PNG ou WebP até 4 MB.' });
+    if (!pergunta && !imagem) return res.status(400).json({ erro: 'Envie uma pergunta ou imagem.' });
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: 'Você é Lino, assistente de manutenção industrial do Line Monitor. Responda em português brasileiro, com objetividade e segurança. Não invente parâmetros, alarmes, históricos ou procedimentos específicos. Quando faltar manual ou evidência, diga que precisa confirmar. Não oriente burlar intertravamentos ou dispositivos de segurança. Nunca execute comandos em máquinas.' }] },
-        contents: [{ role: 'user', parts: [{ text: pergunta }] }],
+        systemInstruction: { parts: [{ text: 'Você é Lino, assistente de manutenção industrial do Line Monitor. Responda em português brasileiro, com objetividade e segurança. Não invente parâmetros, alarmes, históricos ou procedimentos específicos. Quando faltar manual ou evidência, diga que precisa confirmar. Para fotos de alarmes, diagramas elétricos, telas de PLC/robôs e sistemas Vision: descreva apenas o que é legível, diferencie fatos de hipóteses, indique verificações técnicas e solicite manual/modelo quando necessário. Em NR12, nunca recomende bypass, pontes ou neutralização de proteções. Não invente endereços DI/DO, valores ou diagramas. Nunca execute comandos em máquinas.' }] },
+        contents: [{ role: 'user', parts: [...(pergunta ? [{ text: pergunta }] : [{ text: 'Analise tecnicamente esta imagem, informe o que consegue ler e proponha verificações seguras.' }]), ...(imagem ? [{ inline_data: { mime_type: imagem.mimeType, data: imagem.data } }] : [])] }],
         generationConfig: { maxOutputTokens: 600, temperature: 0.3 }
       }),
       signal: AbortSignal.timeout(25000)
