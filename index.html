@@ -751,7 +751,9 @@ function idioma(l){document.querySelectorAll('[data-'+l+']').forEach(function(e)
  },true);
 })();
 <\/script>
-</body></html>`;if(window.Android&&typeof Android.saveHtml==='function')Android.saveHtml(html);window.location.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))}
+<script>/* LINO_IA_BUSCAR_NAV_V2 */
+document.addEventListener('submit',function(e){if(e.target&&e.target.id==='linoVoiceSearch'){const q=document.getElementById('linoCommand')?.value.trim();if(!q)return;e.preventDefault();e.stopImmediatePropagation();window.location.assign('/lino-gemini.html?pergunta='+encodeURIComponent(q));}},true);
+</script></body></html>`;if(window.Android&&typeof Android.saveHtml==='function')Android.saveHtml(html);window.location.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))}
 
 async function gerarRelatorioDiarioPadrao(id){
   let x=dados.find(o=>String(o.id)===String(id));
