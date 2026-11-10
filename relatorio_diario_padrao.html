@@ -664,16 +664,14 @@ p,figcaption,[data-field]{orphans:3;widows:3}
     }
 
     async function compartilharRelatorioSalvo(id) {
-      const item = await obterRelatorioPorId(id);
-      if (!item) return;
-      let html;
-      try { html = await criarCopiaCompartilhavel(item.conteudo); }
-      catch (e) { mostrarToast('', e.message || 'Não foi possível preparar o relatório.'); return; }
-      if (typeof Android !== 'undefined' && typeof Android.shareHtml === 'function') {
-        Android.shareHtml(html);
-        return;
+      try {
+        const item = await obterRelatorioPorId(id);
+        if (!item) throw new Error('Relatório salvo não encontrado.');
+        const data = /^\d{4}-\d{2}-\d{2}$/.test(item.dataRelatorio) ? '_' + item.dataRelatorio : '';
+        await compartilharArquivoDiario(item.conteudo, 'Relatorio_Diario' + data + '.html');
+      } catch (e) {
+        mostrarToast('', e.message || 'Não foi possível compartilhar o relatório.');
       }
-      baixarArquivo(new Blob([html], {type:'text/html'}), 'Relatorio_Diario_' + item.dataRelatorio + '.html');
     }
 
     async function excluirRelatorioSalvo(id) {
@@ -697,27 +695,27 @@ p,figcaption,[data-field]{orphans:3;widows:3}
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       mostrarToast('toast_msg', 'Relatório salvo com as alterações');
     }
 
     async function salvarAlteracoes() {
-      let html;
-      try { html = await criarCopiaCompartilhavel(); }
-      catch (e) { mostrarToast('', e.message || 'Não foi possível preparar o relatório.'); return; }
-      const blob = new Blob([html], {type: 'text/html'});
-      const nomeArquivo = 'Relatorio_Diario.html';
+      try {
+        await compartilharArquivoDiario(undefined, 'Relatorio_Diario.html');
+      } catch (e) {
+        mostrarToast('', e.message || 'Não foi possível compartilhar o relatório.');
+      }
+    }
 
-      // Dentro do APK, usa o compartilhamento nativo do Android. O arquivo
-      // é salvo e anexado ao WhatsApp, Gmail, Outlook ou outro app escolhido.
+    async function compartilharArquivoDiario(conteudo, nomeArquivo) {
+      const html = await criarCopiaCompartilhavel(conteudo);
       if (typeof Android !== 'undefined' && typeof Android.shareHtml === 'function') {
         Android.shareHtml(html);
         return;
       }
 
-      // No celular (Android/iOS), abre o menu nativo de compartilhamento
-      // — WhatsApp, e-mail, Drive etc. — com o arquivo já anexado.
-      if (ehCelular() && navigator.canShare) {
+      const blob = new Blob([html], {type: 'text/html'});
+      if (navigator.share && navigator.canShare) {
         try {
           const arquivo = new File([blob], nomeArquivo, {type: 'text/html'});
           if (navigator.canShare({files: [arquivo]})) {
