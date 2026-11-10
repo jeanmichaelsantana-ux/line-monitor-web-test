@@ -46,11 +46,18 @@ window.gerarRelatorioDiario=gerarRelatorioDiarioPadrao;
     });
     dialog.append(status, close);
     document.body.append(dialog);
-    dialog.showModal();
+    status.style.cssText = 'margin:0 0 16px;line-height:1.45';
+    close.style.cssText = 'width:100%;padding:12px;border:0;border-radius:10px;background:#edf3f8;color:#0b2545;font:inherit;font-weight:700';
+    const button = document.activeElement;
+    const buttonLabel = button?.textContent;
+    if (button instanceof HTMLButtonElement) {
+      button.disabled = true;
+      button.textContent = 'Preparando evidências…';
+    }
     try {
       const files = [];
       for (const [index, item] of evidence.entries()) {
-        if (!dialog.open) return;
+        if (!dialog.isConnected) return;
         const source = item.url || item.data || item.src;
         if (!source) throw Error('Uma evidência está sem arquivo.');
         const response = typeof urlEvidenciaWeb === 'function'
@@ -64,7 +71,7 @@ window.gerarRelatorioDiario=gerarRelatorioDiarioPadrao;
         const ext = ({'image/jpeg':'jpg','video/quicktime':'mov','video/3gpp':'3gp'})[type] || type.split('/')[1];
         files.push(new File([blob], 'Evidencia_' + (index + 1) + '.' + ext, {type}));
       }
-      if (!dialog.open) return;
+      if (!dialog.isConnected) return;
       const title = occurrence.linha + ' - ' + occurrence.equip;
       const text = textoFalha(occurrence);
       const share = document.createElement('button');
@@ -87,9 +94,19 @@ window.gerarRelatorioDiario=gerarRelatorioDiarioPadrao;
       }
       const data = {title, text, files};
       const supported = Boolean(navigator.share && navigator.canShare?.(data));
+      share.style.cssText = 'width:100%;padding:14px;margin-bottom:8px;border:0;border-radius:10px;background:#195578;color:white;font:inherit;font-weight:700';
+      share.textContent = 'Compartilhar no grupo';
+      if (supported && navigator.userActivation?.isActive !== false) {
+        try {
+          await navigator.share(data);
+          return;
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+        }
+      }
       fallback.hidden = supported;
       share.hidden = !supported;
-      status.textContent = supported ? 'Evidências prontas. Toque para escolher o WhatsApp.' : 'Copie o texto e baixe as evidências para anexar no WhatsApp.';
+      status.textContent = supported ? 'Fotos e vídeos prontos para compartilhar.' : 'Copie o texto e baixe as evidências para anexar no WhatsApp.';
       share.onclick = async () => {
         share.disabled = true;
         try { await navigator.share(data); dialog.close(); }
@@ -102,8 +119,20 @@ window.gerarRelatorioDiario=gerarRelatorioDiarioPadrao;
       };
       dialog.insertBefore(share, close);
       dialog.insertBefore(fallback, close);
+      dialog.showModal();
     } catch (error) {
       status.textContent = error.message || 'Não foi possível preparar as evidências.';
-    } finally { preparing = false; }
+      dialog.showModal();
+    } finally {
+      preparing = false;
+      if (!dialog.open) {
+        dialog.remove();
+        urls.forEach(url => URL.revokeObjectURL(url));
+      }
+      if (button instanceof HTMLButtonElement) {
+        button.disabled = false;
+        button.textContent = buttonLabel;
+      }
+    }
   };
 })();
